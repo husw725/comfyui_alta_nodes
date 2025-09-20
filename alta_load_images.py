@@ -223,8 +223,38 @@ class LoadImagesFromDirectoryPath:
             return True
         return validate_load_images(strip_path(directory))
     
+class LoadImageWithPath:
+    """
+    Load a single image and output (image, filename).
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image_path": ("STRING", {"placeholder": "X://path/image.jpg","default": ""})
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("image", "filename")
+    FUNCTION = "load_image"
+    CATEGORY = "Alta"
+
+    def load_image(self, image_path):
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"File not found: {image_path}")
+
+        img = Image.open(image_path).convert("RGB")
+        arr = np.array(img).astype(np.float32) / 255.0
+        tensor = torch.from_numpy(arr)[None,]  # (1,H,W,C)
+        fname = os.path.basename(image_path)
+        return (tensor, fname)
+
+
 
 # 节点映射
 NODE_CLASS_MAPPINGS = {
-    "Alta:LoadImagesPath": LoadImagesFromDirectoryPath
+    "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
+    "Alta:LoadImageWithPath": LoadImageWithPath,
 }
