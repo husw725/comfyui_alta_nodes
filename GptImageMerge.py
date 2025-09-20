@@ -1,69 +1,91 @@
+import os
 import base64
-import io
-import requests
+from io import BytesIO
 from PIL import Image
 import torch
+import numpy as np
+from openai import OpenAI
 
-class GPTImageMerge:
-    """
-    使用 OpenAI gpt-image-1 API 将多张图片合成一张
-    """
 
+class GptImageMerge:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "images": ("IMAGE", {"forceInput": True}),   # 支持多张输入
-                "prompt": ("STRING", {"default": "Merge these images into one."}),
-                "api_key": ("STRING", {"default": "sk-xxxx"}),  # OpenAI API key
+                "image1": ("IMAGE",),  # 第一张，必选
+                "prompt": ("STRING", {"multiline": True, "default": "Describe how to merge the images (e.g. 'Put the second image inside the first')."}),
+            },
+            "optional": {
+                "image2": ("IMAGE",),
+                "image3": ("IMAGE",),
+                "image4": ("IMAGE",),
+                "api_key": ("STRING", {"multiline": False, "default": ""}),
             }
         }
 
     RETURN_TYPES = ("IMAGE",)
-    FUNCTION = "merge_images"
-    CATEGORY = "OpenAI"
+    FUNCTION = "merge"
+    CATEGORY = "Alta/OpenAI"
 
-    def merge_images(self, images, prompt, api_key):
-        # 将 ComfyUI 的 torch tensor 图像转为 PIL
-        pil_images = []
-        for img in images:
-            if isinstance(img, torch.Tensor):
-                img = (img.numpy() * 255).astype("uint8")
-                img = Image.fromarray(img)
-            pil_images.append(img)
+    def _tensor_to_pil(self, tensor):
+        """把 ComfyUI IMAGE tensor 转成 PIL"""
+        if tensor is None:
+            return None
+        if isinstance(tensor, torch.Tensor):
+            arr = (tensor.cpu().numpy().clip(0, 1) * 255).astype("uint8")
+            if arr.shape[-1] == 4:
+                img = Image.fromarray(arr, "RGBA")
+            else:
+                img = Image.fromarray(arr, "RGB")
+            return img
+        raise TypeError(f"Unsupported type: {type(tensor)}")
 
-        # 转为 base64
-        image_data = []
-        for pil in pil_images:
-            buf = io.BytesIO()
+    def merge(self, image1, prompt, image2=None, image3=None, image4=None, api_key=""):
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("⚠️ 请设置 OPENAI_API_KEY 或传入 api_key 参数")
+
+        client = OpenAI(api_key=api_key)
+
+        # 转换 ComfyUI tensor → PIL → BytesIO
+        def to_file(img, name):
+            if img is None:
+                return None
+            pil = self._tensor_to_pil(img)
+            buf = BytesIO()
             pil.save(buf, format="PNG")
-            img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-            image_data.append({"name": "image", "buffer": img_b64})
+            buf.seek(0)
+            return buf
 
-        # 调用 OpenAI gpt-image-1
-        url = "https://api.openai.com/v1/images/edits"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        files = [("image", io.BytesIO(base64.b64decode(img["buffer"]))) for img in image_data]
-        data = {"model": "gpt-image-1", "prompt": prompt}
+        image_files = []
+        for idx, tensor in enumerate([image1, image2, image3, image4], start=1):
+            if tensor is not None:
+                image_files.append(open(to_file(tensor, f"image{idx}.png").name, "rb") if hasattr(to_file(tensor, f"image{idx}.png"), "name") else to_file(tensor, f"image{idx}.png"))
 
-        response = requests.post(url, headers=headers, files=files, data=data)
-        result = response.json()
-        print("GPTImageMerge -> API response:", result)
-        # 解析返回的 base64 图片
-        image_b64 = result["data"][0]["b64_json"]
-        out_img = Image.open(io.BytesIO(base64.b64decode(image_b64)))
-
-        # 转为 ComfyUI 格式 (torch tensor)
-        img_tensor = torch.from_numpy(
-            (torch.ByteTensor(torch.ByteStorage.from_buffer(out_img.tobytes()))
-             .view(out_img.size[1], out_img.size[0], len(out_img.getbands()))
-             .numpy().astype("float32") / 255.0)
+        # 调用 OpenAI
+        result = client.images.edit(
+            model="gpt-image-1",
+            image=image_files,
+            prompt=prompt,
+            size="1024x1024"
         )
 
-        return (img_tensor,)
+        # 获取结果
+        image_base64 = result.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
+        out_img = Image.open(BytesIO(image_bytes)).convert("RGB")
+
+        # 转回 ComfyUI IMAGE tensor
+        arr = torch.from_numpy(np.array(out_img).astype("float32") / 255.0).unsqueeze(0)
+
+        return (arr,)
 
 
-# 节点注册
+# 注册节点
 NODE_CLASS_MAPPINGS = {
-    "Alta:GPTImageMerge": GPTImageMerge
+    "Alta:GptImageMerge": GptImageMerge
 }
+
+# NODE_DISPLAY_NAME_MAPPINGS = {
+#     "GptImageMerge": "Alta:GPT Image Merge (OpenAI)"
+# }

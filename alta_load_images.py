@@ -125,48 +125,46 @@ def load_images(directory: str, image_load_cap: int = 0, skip_first_images: int 
     return images, masks, images.size(0), list(filenames)
 
 
-class LoadImagesFromDirectoryUpload:
+import os
+from PIL import Image, ImageOps
+import numpy as np
+import torch
+import folder_paths
+
+class LoadImage:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         input_dir = folder_paths.get_input_directory()
-        directories = []
-        for item in os.listdir(input_dir):
-            if not os.path.isfile(os.path.join(input_dir, item)) and item != "clipspace":
-                directories.append(item)
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {
             "required": {
-                "directory": (directories,),
-            },
-            "optional": {
-                "image_load_cap": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                "skip_first_images": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                "select_every_nth": ("INT", {"default": 1, "min": 1, "max": BIGMAX, "step": 1}),
-                "meta_batch": ("VHS_BatchManager",),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID"
-            },
+                "image": (sorted(files) + ["#DATA"], {"image_upload": True}),
+            }
         }
-    
-    RETURN_TYPES = ("IMAGE", "MASK", "INT")
-    RETURN_NAMES = ("IMAGE", "MASK", "frame_count")
-    FUNCTION = "load_images"
 
-    CATEGORY = "Video Helper Suite 🎥🅥🅗🅢"
+    CATEGORY = "InspirePack/image"
 
-    def load_images(self, directory: str, **kwargs):
-        directory = folder_paths.get_annotated_filepath(strip_path(directory))
-        return load_images(directory, **kwargs)
-    
-    @classmethod
-    def IS_CHANGED(s, directory: str, **kwargs):
-        directory = folder_paths.get_annotated_filepath(strip_path(directory))
-        return is_changed_load_images(directory, **kwargs)
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
+    RETURN_NAMES = ("image", "mask", "filename")
+    FUNCTION = "load_image"
 
-    @classmethod
-    def VALIDATE_INPUTS(s, directory: str, **kwargs):
-        directory = folder_paths.get_annotated_filepath(strip_path(directory))
-        return validate_load_images(directory)
+    def load_image(self, image):
+        # Convert uploaded image to RGB and numpy array
+        img = ImageOps.exif_transpose(image)
+        img = img.convert("RGB")
+        img_array = np.array(img).astype(np.float32) / 255.0
+        img_tensor = torch.from_numpy(img_array)[None,]
+
+        # Generate mask if image has alpha
+        if 'A' in img.getbands():
+            mask = np.array(img.getchannel('A')).astype(np.float32) / 255.0
+            mask = 1. - torch.from_numpy(mask)
+        else:
+            mask = torch.zeros((64, 64), dtype=torch.float32, device="cpu")
+
+        # Return image, mask, and filename
+        filename = getattr(image, "filename", "uploaded_image")
+        return (img_tensor, mask.unsqueeze(0), filename)
 
 
 
@@ -255,6 +253,7 @@ class LoadImageWithPath:
 
 # 节点映射
 NODE_CLASS_MAPPINGS = {
+    "Alta:LoadImage": LoadImage,
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
     "Alta:LoadImageWithPath": LoadImageWithPath,
 }

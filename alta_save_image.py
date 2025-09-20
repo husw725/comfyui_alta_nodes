@@ -112,11 +112,6 @@ class SaveImageWithName:
         pil.save(out_path)
         return (image, out_path)
 
-
-NODE_CLASS_MAPPINGS = {
-    
-}
-
 NODE_CLASS_MAPPINGS = {
     "Alta:SaveImagePlus": SaveImagePlus,
     "Alta:SaveImage": SaveImageWithName
