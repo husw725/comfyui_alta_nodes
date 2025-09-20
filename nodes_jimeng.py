@@ -80,6 +80,14 @@ def validate_input_image(image: torch.Tensor) -> None:
         image, min_aspect_ratio=1 / 3, max_aspect_ratio=3)
 
 
+def write_jiment_log(log):
+    with open("jimeng_log.txt", "a+") as f:
+        f.seek(0, 2)
+        f.write(time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()))
+        f.write(log)
+        f.write("\n")
+
+
 class JimengApiError(Exception):
     """Base exception for Jimeng API errors."""
 
@@ -108,11 +116,17 @@ class JimengT2IReqType(str, Enum):
 
 
 class JimengI2VReqType(str, Enum):
-    i2v_720p_first_frame = 'jimeng_i2v_first_v30'
-    i2v_720p_first_tail_frame = 'jimeng_i2v_first_tail_v30'
-    # i2v_720p_recamera = 'jimeng_i2v_recamera_v30'
-    i2v_1080p_first = 'jimeng_i2v_first_v30_1080'
-    i2v_1080p_first_tail_frame = 'jimeng_i2v_first_tail_v30_1080'
+    i2v_720p_first_frame = '3.0 720P 首帧'
+    i2v_720p_first_tail_frame = '3.0 720P 首尾帧'
+    i2v_1080p_first = '3.0 1080P 首帧'
+    i2v_1080p_first_tail_frame = '3.0 1080P 首尾帧'
+
+I2VReqMap = {
+    '3.0 720P 首帧': 'jimeng_i2v_first_v30',
+    '3.0 720P 首尾帧': 'jimeng_i2v_first_tail_v30',
+    '3.0 1080P 首帧': 'jimeng_i2v_first_v30_1080',
+    '3.0 1080P 首尾帧': 'jimeng_i2v_first_tail_v30_1080',
+}
 
 
 class JimengT2VReqType(str, Enum):
@@ -123,6 +137,7 @@ class JimengT2VReqType(str, Enum):
 class JimengVideoGenDuration(str, Enum):
     field_5 = '5'
     field_10 = '10'
+
 
 class JimengImage2VideoRequest(BaseModel):
     req_type: Optional[JimengI2VReqType] = JimengI2VReqType.i2v_720p_first_frame
@@ -175,20 +190,12 @@ class JimengText2ImageRequest(BaseModel):
         121,
         description='1、生成图像宽高，系统默认生成1328 * 1328的图像；2、支持自定义生成图像宽高，宽高比在1:3到3:1之间，长度在[512, 2048]之间；',
     )
-    use_pre_llm: Optional[bool] = Field(True, description="开启文本扩写，会针对输入prompt进行扩写优化，如果输入prompt较短建议开启，如果输入prompt较长建议关闭默认值：true")
+    use_pre_llm: Optional[bool] = Field(
+        True, description="开启文本扩写，会针对输入prompt进行扩写优化，如果输入prompt较短建议开启，如果输入prompt较长建议关闭默认值：true")
 
     def __init__(self, *args, **kwargs):
         self.visual_service = VisualService()
         return super().__init__(self, *args, **kwargs)
-
-
-# class JimengResponse(BaseModel):
-#     code: Optional[int] = Field(None, description='Error code')
-#     data: Optional[Data] = None
-#     message: Optional[str] = Field(None, description='Error message')
-#     request_id: Optional[str] = Field(None, description='Request ID')
-#     status: Optional[int] = Field(None, description='Error code')
-#     time_elapsed: Optional[str] = Field(None, description='Error code')
 
 
 class JimengText2ImageNode(JimengNodeBase):
@@ -269,8 +276,6 @@ class JimengText2ImageNode(JimengNodeBase):
                 # )
             },
         }
-
-
 
     async def api_call(
         self,
@@ -405,7 +410,7 @@ class JimengImage2VideoNode(JimengNodeBase):
         if tail_frame is not None:
             images.append(tensor_to_base64_string(tail_frame))
         form = {
-            "req_key": req_type,
+            "req_key": I2VReqMap.get(req_type),
             "prompt": prompt,
             "binary_data_base64": images,
             "seed": seed,
@@ -415,29 +420,68 @@ class JimengImage2VideoNode(JimengNodeBase):
         visual_service = VisualService()
         visual_service.set_ak(api_key)
         visual_service.set_sk(api_secret)
+        # 同步调用
+        # video_url = self.sync_api_call(visual_service, form)
+        # 异步调用
+        video_url = await self.async_api_call(visual_service, form)
+        
+        return await download_url_to_video_output(video_url)
+        
+        
+    def sync_api_call(self, visual_service, form) -> str:
         response = visual_service.cv_process(form)
-
-        with open("jimeng_responses.txt", "a+") as f:
-            f.seek(0, 2)  # 移动到文件末尾
-            f.write(time.strftime("%Y-%m-%d %H:%M:%S\n", time.localtime()))
-            f.write(f"{json.dumps(response, indent=4)}\n\n")  # 格式化 JSON 并附加内容
 
         if response is None:
             logging.error("创建即梦视频生成任务失败. ")
             raise JimengApiError(error_msg)
         elif response['code'] != 10000:
-            error_msg = f"创建即梦视频生成任务失败. Code: {response.get('code')}, Message: {response.get('message')}, Data: {response.get('data')}"
+            error_msg = f"创建即梦视频生成任务失败. response:\n{json.dumps(response, indent=4)}"
             logging.error(error_msg)
             raise JimengApiError(error_msg)
         
+        write_jiment_log('视频生成任务成功 response:\n' + json.dumps(response, indent=4))
+        
         video_urls = response.get('data').get('urls')
 
-        logging.info(f"视频已生成，URL： {video_urls}")
-
         if len(video_urls) > 0:
-            return await download_url_to_video_output(video_urls[0])
+            logging.info(f"视频已生成，URL： {video_urls}")
+            return video_urls[0]
         else:
-            return None
+            logging.error("视频生成失败")
+            raise JimengApiError("视频生成失败")
+
+    async def async_api_call(self, visual_service, form) -> str:
+        response = visual_service.cv_sync2async_submit_task(form)
+
+        if response is not None and response['code'] == 10000:
+            write_jiment_log(f"视频生成异步任务创建成功 task_id: {response.get('data').get('task_id')}")
+
+            task_id = response.get('data').get('task_id')
+            query_form = {'req_key': form['req_key'], 'task_id': task_id}
+            max_retry_count = 1000
+            while max_retry_count > 0:
+                response = visual_service.cv_sync2async_get_result(query_form)
+                if response is not None:
+                    if response['code'] == 10000:
+                        status = response['data']['status']
+                        if status == 'done':
+                            return response.get('data').get('video_url')
+                        elif status == 'in_queue':
+                            max_retry_count -= 1
+                            time.sleep(0.5)
+                        else:
+                            write_jiment_log(f"视频生成结果查询异常 status: {status}")
+                            logging.error(f"视频生成结果查询异常 status: {status}")
+                            raise JimengApiError("视频生成失败")
+                    else:
+                        write_jiment_log(f"视频生成结果查询异常 response:\n{json.dumps(response, indent=4)}")
+        else:
+            write_jiment_log(f"视频生成异步任务创建失败 response:\n{json.dumps(response, indent=4)}")
+            logging.error("提交任务失败")
+            raise JimengApiError(f"提交任务失败.")
+
+        
+
 
 
 NODE_CLASS_MAPPINGS = {
