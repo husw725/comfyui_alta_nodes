@@ -485,11 +485,11 @@ class JimengImage2VideoNode(JimengNodeBase):
 
 
 NODE_CLASS_MAPPINGS = {
-    "JimengText2Image": JimengText2ImageNode,
-    "JiMengImage2Video": JimengImage2VideoNode,
+    "Alta:JimengText2Image": JimengText2ImageNode,
+    "Alta:JiMengImage2Video": JimengImage2VideoNode,
 }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "JimengText2Image": "即梦 文生图",
-    "JiMengImage2Video": "即梦 图生视频"
-}
+# NODE_DISPLAY_NAME_MAPPINGS = {
+#     "JimengText2Image": "即梦 文生图",
+#     "JiMengImage2Video": "即梦 图生视频"
+# }
