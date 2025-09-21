@@ -131,42 +131,130 @@ import numpy as np
 import torch
 import folder_paths
 
-class LoadImage:
+class LoadImageFromPath:
     @classmethod
     def INPUT_TYPES(cls):
-        input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         return {
             "required": {
-                "image": (sorted(files) + ["#DATA"], {"image_upload": True}),
+                "path": ("STRING", {"multiline": False}),
+            }
+        }
+
+    CATEGORY = "Alta"
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("image", "filename")
+    FUNCTION = "load_image"
+
+    def load_image(self, path):
+        # 找到绝对路径
+        if os.path.exists(path):
+            full_path = path
+        else:
+            full_path = os.path.join(folder_paths.get_input_directory(), path)
+
+        img_obj = Image.open(full_path)
+
+        # 转 RGB 并处理 EXIF
+        img = ImageOps.exif_transpose(img_obj).convert("RGB")
+        img_array = np.array(img).astype(np.float32) / 255.0
+
+        # 转成 (1, H, W, 3)
+        img_tensor = torch.from_numpy(img_array).unsqueeze(0)
+
+        filename = os.path.basename(full_path)
+        return (img_tensor, filename)
+    
+class EditableImage:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),   # 只接受 IMAGE 作为输入
             }
         }
 
     CATEGORY = "Alta"
 
+    # 输出只返回 MASK
+    RETURN_TYPES = ("MASK",)
+    RETURN_NAMES = ("mask",)
+    FUNCTION = "edit_mask"
+
+    def edit_mask(self, image):
+        """
+        ComfyUI 会在 UI 上自动显示传入的 image，并允许用户绘制 mask
+        我们这里不需要额外生成，只返回一个空 mask，UI 会覆盖
+        """
+        # 生成一个空 mask（全黑）
+        mask = torch.zeros((1, image.shape[2], image.shape[3]), dtype=torch.float32)
+        return (mask,)
+        if path and os.path.exists(path):
+            img_obj = Image.open(path)
+            filename = os.path.basename(path)
+        else:
+            # 否则用 UI 上传的 image
+            if isinstance(image, torch.Tensor):
+                return image, torch.zeros((image.shape[0], image.shape[1], image.shape[2])), filename
+
+        # 转 RGB 并处理 EXIF
+        img = ImageOps.exif_transpose(img_obj).convert("RGB")
+        img_array = np.array(img).astype(np.float32) / 255.0
+        img_tensor = torch.from_numpy(img_array).unsqueeze(0)  # (1, H, W, 3)
+
+        # 生成 mask（透明通道）
+        if "A" in img_obj.getbands():
+            alpha = np.array(img_obj.getchannel("A")).astype(np.float32) / 255.0
+            mask = 1.0 - torch.from_numpy(alpha).unsqueeze(0)
+        else:
+            mask = torch.zeros((1, img_tensor.shape[1], img_tensor.shape[2]), dtype=torch.float32)
+
+        return img_tensor, mask, filename
+
+class LoadImage:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # 支持上传图片 + 字符串路径输入
+                "image": ("STRING", {"image_upload": True}),
+            }
+        }
+
+    CATEGORY = "Alta"
     RETURN_TYPES = ("IMAGE", "MASK", "STRING")
     RETURN_NAMES = ("image", "mask", "filename")
     FUNCTION = "load_image"
 
     def load_image(self, image):
-        # Convert uploaded image to RGB and numpy array
-        img = ImageOps.exif_transpose(image)
-        img = img.convert("RGB")
-        img_array = np.array(img).astype(np.float32) / 255.0
-        img_tensor = torch.from_numpy(img_array)[None,]
-
-        # Generate mask if image has alpha
-        if 'A' in img.getbands():
-            mask = np.array(img.getchannel('A')).astype(np.float32) / 255.0
-            mask = 1. - torch.from_numpy(mask)
+        # 如果是字符串路径，加载图片
+        if isinstance(image, str):
+            if os.path.exists(image):
+                full_path = image
+            else:
+                full_path = os.path.join(folder_paths.get_input_directory(), image)
+            img_obj = Image.open(full_path)
         else:
-            mask = torch.zeros((64, 64), dtype=torch.float32, device="cpu")
+            # 兼容直接传 PIL.Image 的情况
+            img_obj = image
 
-        # Return image, mask, and filename
-        filename = getattr(image, "filename", "uploaded_image")
-        return (img_tensor, mask.unsqueeze(0), filename)
+        # 转 RGB 并处理 EXIF 旋转
+        img = ImageOps.exif_transpose(img_obj).convert("RGB")
+        img_array = np.array(img).astype(np.float32) / 255.0
+        # (1, C, H, W)
+        img_tensor = torch.from_numpy(img_array).permute(2, 0, 1).unsqueeze(0)
 
+        # 生成 mask
+        if "A" in img_obj.getbands():
+            alpha = np.array(img_obj.getchannel("A")).astype(np.float32) / 255.0
+            mask = 1.0 - torch.from_numpy(alpha).unsqueeze(0)  # (1, H, W)
+        else:
+            mask = torch.zeros((1, img_tensor.shape[2], img_tensor.shape[3]), dtype=torch.float32)
 
+        # 获取文件名
+        filename = getattr(img_obj, "filename", "uploaded_image")
+        filename = os.path.basename(filename)
+
+        return img_tensor, mask, filename
 
 class LoadImagesFromDirectoryPath:
     @classmethod
@@ -355,6 +443,8 @@ NODE_CLASS_MAPPINGS = {
     "Alta:GetStringByIndex": GetStringByIndex,
     "Alta:GetImageByIndex": GetImageByIndex,
     "Alta:LoadImage": LoadImage,
+    "Alta:LoadImageFromPath": LoadImageFromPath,
+    "Alta:EditableImage": EditableImage,
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
     "Alta:LoadImageWithPath": LoadImageWithPath,
 }
