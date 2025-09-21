@@ -286,6 +286,9 @@ class GetStringByIndex:
             "required": {
                 "strings": ("LIST",),   # 输入是一个 list
                 "index": ("INT", {"default": 0, "min": 0, "step": 1}),
+            },
+            "optional": {
+                # "pre_value": ("ANY", {"default": None}),
             }
         }
 
@@ -294,7 +297,7 @@ class GetStringByIndex:
     FUNCTION = "get_string"
     CATEGORY = "InspirePack/List"
 
-    def get_string(self, strings, index: int):
+    def get_string(self, strings, index: int, pre_value: str = None):
         if not isinstance(strings, (list, tuple)):
             raise TypeError(f"Expected list/tuple, got {type(strings)}")
 
