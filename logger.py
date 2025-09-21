@@ -22,7 +22,7 @@ class ColoredFormatter(logging.Formatter):
 
 
 # Create a new logger
-logger = logging.getLogger("VideoHelperSuite")
+logger = logging.getLogger("AltaNodes")
 logger.propagate = False
 
 # Add handler if we don't have one.
@@ -34,3 +34,4 @@ if not logger.handlers:
 # Configure logger
 loglevel = logging.INFO
 logger.setLevel(loglevel)
+
