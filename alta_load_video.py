@@ -18,17 +18,6 @@ from .utils import BIGMAX, DIMMAX, calculate_file_hash, get_sorted_dir_files_fro
         lazy_get_audio, hash_path, validate_path, strip_path, try_download_video,  \
         is_url, imageOrLatent, ffmpeg_path, ENCODE_ARGS, floatOrInt
 
-def list_video_files(folder: str):
-    """返回文件夹里所有视频路径"""
-    if not os.path.isdir(folder):
-        raise ValueError(f"{folder} is not a folder")
-    files = [
-        os.path.join(folder, f) 
-        for f in os.listdir(folder)
-        if os.path.splitext(f)[1].lower() in video_extensions
-    ]
-    files.sort()
-    return files
 
 video_extensions = ['webm', 'mp4', 'mkv', 'gif', 'mov']
 
@@ -605,6 +594,7 @@ class LoadVideoFFmpegUpload:
         return True
 
 
+
 class LoadVideoFFmpegPath:
     @classmethod
     def INPUT_TYPES(s):
@@ -649,7 +639,7 @@ class LoadVideoFFmpegPath:
 
     @classmethod
     def IS_CHANGED(s, video, **kwargs):
-        return hash_path(video)
+        return simple_hash(video)
 
     @classmethod
     def VALIDATE_INPUTS(s, video):
@@ -702,6 +692,45 @@ class LoadImagePath:
 
 
 # ===================== 批量视频节点 =====================
+video_extensions = [".mp4", ".avi", ".mov", ".mkv"]
+
+def list_video_files(folder: str):
+    if not os.path.isdir(folder):
+        return []
+    return sorted(
+        [
+            os.path.join(folder, f)
+            for f in os.listdir(folder)
+            if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(tuple(video_extensions))
+        ]
+    )
+
+def simple_hash(path: str) -> str:
+    """
+    返回文件或目录的固定 hash。
+    - 如果是文件，返回文件路径的 md5。
+    - 如果是目录，返回目录下所有文件路径拼接后的 md5。
+    """
+    if path is None:
+        return ""
+
+    if os.path.isdir(path):
+        # 获取目录下所有文件（按名字排序保证稳定）
+        files = sorted(
+            [
+                os.path.join(path, f)
+                for f in os.listdir(path)
+                if os.path.isfile(os.path.join(path, f))
+            ]
+        )
+        hash_input = "".join(files)
+    else:
+        hash_input = path
+
+    # md5 固定 hash
+    import hashlib
+    return hashlib.md5(hash_input.encode("utf-8")).hexdigest()
+
 class LoadVideosFromFolder:
     @classmethod
     def INPUT_TYPES(cls):
@@ -727,7 +756,7 @@ class LoadVideosFromFolder:
 
     @classmethod
     def IS_CHANGED(cls, folder, **kwargs):
-        return hash_path(folder)
+        return simple_hash(folder)
 
     @classmethod
     def VALIDATE_INPUTS(cls, folder):
