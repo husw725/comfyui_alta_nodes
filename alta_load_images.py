@@ -288,7 +288,7 @@ class GetStringByIndex:
                 "index": ("INT", {"default": 0, "min": 0, "step": 1}),
             },
             "optional": {
-                # "pre_value": ("ANY", {"default": None}),
+                "pre_value": ("ANY", {"default": None}),
             }
         }
 
