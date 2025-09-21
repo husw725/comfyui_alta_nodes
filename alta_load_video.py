@@ -18,6 +18,17 @@ from .utils import BIGMAX, DIMMAX, calculate_file_hash, get_sorted_dir_files_fro
         lazy_get_audio, hash_path, validate_path, strip_path, try_download_video,  \
         is_url, imageOrLatent, ffmpeg_path, ENCODE_ARGS, floatOrInt
 
+def list_video_files(folder: str):
+    """返回文件夹里所有视频路径"""
+    if not os.path.isdir(folder):
+        raise ValueError(f"{folder} is not a folder")
+    files = [
+        os.path.join(folder, f) 
+        for f in os.listdir(folder)
+        if os.path.splitext(f)[1].lower() in video_extensions
+    ]
+    files.sort()
+    return files
 
 video_extensions = ['webm', 'mp4', 'mkv', 'gif', 'mov']
 
@@ -716,7 +727,7 @@ class LoadVideosFromFolder:
 
     @classmethod
     def IS_CHANGED(cls, folder, **kwargs):
-        return simple_hash(folder)
+        return hash_path(folder)
 
     @classmethod
     def VALIDATE_INPUTS(cls, folder):
