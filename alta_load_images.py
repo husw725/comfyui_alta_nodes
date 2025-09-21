@@ -142,7 +142,7 @@ class LoadImage:
             }
         }
 
-    CATEGORY = "InspirePack/image"
+    CATEGORY = "Alta"
 
     RETURN_TYPES = ("IMAGE", "MASK", "STRING")
     RETURN_NAMES = ("image", "mask", "filename")
@@ -250,9 +250,107 @@ class LoadImageWithPath:
         return (tensor, fname)
 
 
+import torch
+
+class GetImageByIndex:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),   # 批量图片 (batch,h,w,c)
+                "index": ("INT", {"default": 0, "min": 0, "step": 1}),
+            },
+            "optional": {
+                "pre_value": ("IMAGE", {"default": None}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "get_image"
+    CATEGORY = "InspirePack/List"
+
+    def get_image(self, images: torch.Tensor, index: int, pre_value: torch.Tensor = None):
+        batch_size = images.shape[0]
+        if index < 0 or index >= batch_size:
+            raise IndexError(f"Index {index} out of range (0~{batch_size-1})")
+
+        # 取出 batch 里的某一张，保持维度一致 (1,h,w,c)
+        single = images[index:index+1].clone()
+        return (single,)
+
+class GetStringByIndex:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "strings": ("LIST",),   # 输入是一个 list
+                "index": ("INT", {"default": 0, "min": 0, "step": 1}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("string",)
+    FUNCTION = "get_string"
+    CATEGORY = "InspirePack/List"
+
+    def get_string(self, strings, index: int):
+        if not isinstance(strings, (list, tuple)):
+            raise TypeError(f"Expected list/tuple, got {type(strings)}")
+
+        total = len(strings)
+        if total == 0:
+            raise ValueError("Input list is empty.")
+
+        if index < 0 or index >= total:
+            raise IndexError(f"Index {index} out of range (0~{total-1})")
+
+        return (strings[index],)
+    
+import torch
+
+class GetImageAndPath:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),   # 批量图像 (batch,h,w,c)
+                "paths": ("LIST",),     # 对应的路径列表
+                "index": ("INT", {"default": 0, "min": 0, "step": 1}),
+            },
+            "optional": {
+                "pre_value": ("IMAGE", {"default": None}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("image", "path")
+    FUNCTION = "get_image_and_path"
+    CATEGORY = "InspirePack/List"
+
+    def get_image_and_path(self, images: torch.Tensor, paths, index: int, pre_value: torch.Tensor = None):
+        # 校验 batch
+        batch_size = images.shape[0]
+        if index < 0 or index >= batch_size:
+            raise IndexError(f"Index {index} out of range for images (0~{batch_size-1})")
+
+        # 校验 list
+        if not isinstance(paths, (list, tuple)):
+            raise TypeError(f"Expected list/tuple for paths, got {type(paths)}")
+        if len(paths) != batch_size:
+            raise ValueError(f"Number of paths ({len(paths)}) does not match images batch size ({batch_size})")
+
+        # 取出单张图
+        single_image = images[index:index+1].clone()
+        single_path = paths[index]
+
+        return (single_image, single_path)
 
 # 节点映射
 NODE_CLASS_MAPPINGS = {
+    "Alta:GetImageAndPath": GetImageAndPath,
+    "Alta:GetStringByIndex": GetStringByIndex,
+    "Alta:GetImageByIndex": GetImageByIndex,
     "Alta:LoadImage": LoadImage,
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
     "Alta:LoadImageWithPath": LoadImageWithPath,
