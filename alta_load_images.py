@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from PIL import Image, ImageOps
 import itertools
-
+from .logger import logger
 from comfy.k_diffusion.utils import FolderOfImages
 from comfy.utils import common_upscale, ProgressBar
 # from .logger import logger
@@ -164,97 +164,7 @@ class LoadImageFromPath:
         filename = os.path.basename(full_path)
         return (img_tensor, filename)
     
-class EditableImage:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "image": ("IMAGE",),   # 只接受 IMAGE 作为输入
-            }
-        }
 
-    CATEGORY = "Alta"
-
-    # 输出只返回 MASK
-    RETURN_TYPES = ("MASK",)
-    RETURN_NAMES = ("mask",)
-    FUNCTION = "edit_mask"
-
-    def edit_mask(self, image):
-        """
-        ComfyUI 会在 UI 上自动显示传入的 image，并允许用户绘制 mask
-        我们这里不需要额外生成，只返回一个空 mask，UI 会覆盖
-        """
-        # 生成一个空 mask（全黑）
-        mask = torch.zeros((1, image.shape[2], image.shape[3]), dtype=torch.float32)
-        return (mask,)
-        if path and os.path.exists(path):
-            img_obj = Image.open(path)
-            filename = os.path.basename(path)
-        else:
-            # 否则用 UI 上传的 image
-            if isinstance(image, torch.Tensor):
-                return image, torch.zeros((image.shape[0], image.shape[1], image.shape[2])), filename
-
-        # 转 RGB 并处理 EXIF
-        img = ImageOps.exif_transpose(img_obj).convert("RGB")
-        img_array = np.array(img).astype(np.float32) / 255.0
-        img_tensor = torch.from_numpy(img_array).unsqueeze(0)  # (1, H, W, 3)
-
-        # 生成 mask（透明通道）
-        if "A" in img_obj.getbands():
-            alpha = np.array(img_obj.getchannel("A")).astype(np.float32) / 255.0
-            mask = 1.0 - torch.from_numpy(alpha).unsqueeze(0)
-        else:
-            mask = torch.zeros((1, img_tensor.shape[1], img_tensor.shape[2]), dtype=torch.float32)
-
-        return img_tensor, mask, filename
-
-class LoadImage:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                # 支持上传图片 + 字符串路径输入
-                "image": ("STRING", {"image_upload": True}),
-            }
-        }
-
-    CATEGORY = "Alta"
-    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
-    RETURN_NAMES = ("image", "mask", "filename")
-    FUNCTION = "load_image"
-
-    def load_image(self, image):
-        # 如果是字符串路径，加载图片
-        if isinstance(image, str):
-            if os.path.exists(image):
-                full_path = image
-            else:
-                full_path = os.path.join(folder_paths.get_input_directory(), image)
-            img_obj = Image.open(full_path)
-        else:
-            # 兼容直接传 PIL.Image 的情况
-            img_obj = image
-
-        # 转 RGB 并处理 EXIF 旋转
-        img = ImageOps.exif_transpose(img_obj).convert("RGB")
-        img_array = np.array(img).astype(np.float32) / 255.0
-        # (1, C, H, W)
-        img_tensor = torch.from_numpy(img_array).permute(2, 0, 1).unsqueeze(0)
-
-        # 生成 mask
-        if "A" in img_obj.getbands():
-            alpha = np.array(img_obj.getchannel("A")).astype(np.float32) / 255.0
-            mask = 1.0 - torch.from_numpy(alpha).unsqueeze(0)  # (1, H, W)
-        else:
-            mask = torch.zeros((1, img_tensor.shape[2], img_tensor.shape[3]), dtype=torch.float32)
-
-        # 获取文件名
-        filename = getattr(img_obj, "filename", "uploaded_image")
-        filename = os.path.basename(filename)
-
-        return img_tensor, mask, filename
 
 class LoadImagesFromDirectoryPath:
     @classmethod
@@ -437,6 +347,118 @@ class GetImageAndPath:
 
         return (single_image, single_path)
 
+
+from PIL import Image, ImageOps, ImageSequence
+
+import node_helpers
+
+class LoadImage:
+    def __init__(self):
+        # 每个节点实例单独存储
+        self.original_filename = None
+
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["image"])
+        return {"required":
+                    {"image": (sorted(files), {"image_upload": True})},
+                }
+
+    CATEGORY = "Alta"
+
+    RETURN_TYPES = ("IMAGE", "MASK","STRING")
+    FUNCTION = "load_image"
+    def load_image(self, image):
+        if "clipspace" in image or "[input]" in image:
+            # 这是从编辑/Mask 过来的临时文件
+            is_edit = True
+        else:
+            # 这是用户直接在 UI 下拉框里选择的原始文件
+            is_edit = False
+        if not is_edit:
+            self.original_filename = os.path.basename(image)
+        logger.info(f"Loading image: {self.original_filename}")
+                    
+        image_path = folder_paths.get_annotated_filepath(image)
+
+        img = node_helpers.pillow(Image.open, image_path)
+
+        output_images = []
+        output_masks = []
+        w, h = None, None
+
+        excluded_formats = ['MPO']
+
+        for i in ImageSequence.Iterator(img):
+            i = node_helpers.pillow(ImageOps.exif_transpose, i)
+
+            if i.mode == 'I':
+                i = i.point(lambda i: i * (1 / 255))
+            image = i.convert("RGB")
+
+            if len(output_images) == 0:
+                w = image.size[0]
+                h = image.size[1]
+
+            if image.size[0] != w or image.size[1] != h:
+                continue
+
+            image = np.array(image).astype(np.float32) / 255.0
+            image = torch.from_numpy(image)[None,]
+            if 'A' in i.getbands():
+                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
+                mask = 1. - torch.from_numpy(mask)
+            elif i.mode == 'P' and 'transparency' in i.info:
+                mask = np.array(i.convert('RGBA').getchannel('A')).astype(np.float32) / 255.0
+                mask = 1. - torch.from_numpy(mask)
+            else:
+                mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
+            output_images.append(image)
+            output_masks.append(mask.unsqueeze(0))
+
+        if len(output_images) > 1 and img.format not in excluded_formats:
+            output_image = torch.cat(output_images, dim=0)
+            output_mask = torch.cat(output_masks, dim=0)
+        else:
+            output_image = output_images[0]
+            output_mask = output_masks[0]
+
+        
+        return (output_image, output_mask,self.original_filename)
+
+    @classmethod
+    def IS_CHANGED(s, image):
+        image_path = folder_paths.get_annotated_filepath(image)
+        m = hashlib.sha256()
+        with open(image_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(s, image):
+        if not folder_paths.exists_annotated_filepath(image):
+            return "Invalid image file: {}".format(image)
+
+        return True
+
+class ExtractFilename:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "extract"
+    CATEGORY = "Utils"
+
+    def extract(self, image):
+        filename = image.metadata.get("filename", "")
+        return (filename,)
 # 节点映射
 NODE_CLASS_MAPPINGS = {
     "Alta:GetImageAndPath": GetImageAndPath,
@@ -444,7 +466,6 @@ NODE_CLASS_MAPPINGS = {
     "Alta:GetImageByIndex": GetImageByIndex,
     "Alta:LoadImage": LoadImage,
     "Alta:LoadImageFromPath": LoadImageFromPath,
-    "Alta:EditableImage": EditableImage,
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
-    "Alta:LoadImageWithPath": LoadImageWithPath,
+    "Alta:LoadImageWithPath": LoadImageWithPath
 }
