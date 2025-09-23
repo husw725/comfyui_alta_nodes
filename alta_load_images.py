@@ -7,7 +7,6 @@ import itertools
 from .logger import logger
 from comfy.k_diffusion.utils import FolderOfImages
 from comfy.utils import common_upscale, ProgressBar
-# from .logger import logger
 from .utils import BIGMAX, calculate_file_hash, get_sorted_dir_files_from_directory, validate_path, strip_path
 
 
