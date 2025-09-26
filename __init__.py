@@ -37,4 +37,11 @@ try:
 except ImportError as e:
     logger.error("Error importing alta_save_video",e)
 
+try:
+    from .alta_save_str import NODE_CLASS_MAPPINGS as STR_SAVE_MAPPING
+    NODE_CLASS_MAPPINGS.update(STR_SAVE_MAPPING)
+    logger.info("alta_save_str loaded")
+except ImportError as e:
+    logger.error("Error importing alta_save_str",e)
+
 logger.warning("================= ALTA NODES LOADED ================")
