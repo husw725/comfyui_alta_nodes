@@ -762,8 +762,36 @@ class LoadVideosFromFolder:
     def VALIDATE_INPUTS(cls, folder):
         return os.path.isdir(folder)
 
+class LoadVideo:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "video_path": ("STRING", {"multiline": False}),
+            }
+        }
+
+    RETURN_TYPES = ("VIDEO",)
+    FUNCTION = "load_video"
+    CATEGORY = "Alta"
+
+    def load_video(self, video_path):
+        import cv2
+        if not video_path:
+            return None
+        cap = cv2.VideoCapture(video_path)
+        frames = []
+        success, frame = cap.read()
+        while success:
+            frames.append(frame)
+            success, frame = cap.read()
+        cap.release()
+        return frames
+
+
 # ===================== 节点映射 =====================
 NODE_CLASS_MAPPINGS = {
     "Alta:LoadVideoPath": LoadVideoPath,
     "Alta:LoadVideosFromFolder": LoadVideosFromFolder,
+    "Alta:LoadVideo": LoadVideo,
 }
