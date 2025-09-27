@@ -762,9 +762,7 @@ class LoadVideosFromFolder:
     def VALIDATE_INPUTS(cls, folder):
         return os.path.isdir(folder)
 
-import os
-import folder_paths
-from comfy.utils import VideoFromFile
+from comfy_api.input_impl import VideoFromFile
 
 class LoadVideo:
     # 定义输入输出
