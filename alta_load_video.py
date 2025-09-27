@@ -762,32 +762,38 @@ class LoadVideosFromFolder:
     def VALIDATE_INPUTS(cls, folder):
         return os.path.isdir(folder)
 
+import os
+import folder_paths
+from comfy.utils import VideoFromFile
+
 class LoadVideo:
+    # 定义输入输出
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "video_path": ("STRING", {"multiline": False}),
-            }
+                "video_path": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "placeholder": "请输入视频文件的完整路径",
+                }),
+            },
         }
 
     RETURN_TYPES = ("VIDEO",)
     FUNCTION = "load_video"
-    CATEGORY = "Alta"
+    CATEGORY = "alta"
 
-    def load_video(self, video_path):
-        import cv2
-        if not video_path:
-            return None
-        cap = cv2.VideoCapture(video_path)
-        frames = []
-        success, frame = cap.read()
-        while success:
-            frames.append(frame)
-            success, frame = cap.read()
-        cap.release()
-        return frames
+    @staticmethod
+    def load_video(video_path: str):
+        # 检查文件是否存在
+        if not os.path.isfile(video_path):
+            raise FileNotFoundError(f"视频文件不存在: {video_path}")
 
+        # 返回视频对象
+        return (VideoFromFile(video_path),)
+
+        return frame
 
 # ===================== 节点映射 =====================
 NODE_CLASS_MAPPINGS = {
