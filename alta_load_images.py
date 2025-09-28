@@ -163,7 +163,60 @@ class LoadImageFromPath:
         filename = os.path.basename(full_path)
         return (img_tensor, filename)
     
+class ReadImageFromFile:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # 图片所在目录
+                "folder": ("STRING", {
+                    "default": "inputs", 
+                    "multiline": False
+                }),
+                # 图片文件名（带或不带扩展名）
+                "filename": ("STRING", {
+                    "default": "image1",
+                    "multiline": False
+                }),
+                # 可选扩展名（默认为 jpg）
+                "extension": ("STRING", {
+                    "default": "jpg",
+                    "multiline": False
+                }),
+            }
+        }
 
+    CATEGORY = "Alta"
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("image", "filename")
+    FUNCTION = "read_image"
+
+    def read_image(self, folder, filename, extension="jpg"):
+        # 如果文件名里已经带了扩展名，就不再重复加
+        if not filename.lower().endswith(f".{extension.lower()}"):
+            filename_with_ext = f"{filename}.{extension}"
+        else:
+            filename_with_ext = filename
+
+        # 拼接完整路径
+        if os.path.isabs(folder):
+            full_path = os.path.join(folder, filename_with_ext)
+        else:
+            # 相对路径：从 ComfyUI 输入目录开始
+            full_path = os.path.join(folder_paths.get_input_directory(), folder, filename_with_ext)
+
+        if not os.path.isfile(full_path):
+            raise FileNotFoundError(f"Image not found: {full_path}")
+
+        # 打开图片
+        img_obj = Image.open(full_path)
+        img = ImageOps.exif_transpose(img_obj).convert("RGB")
+
+        # 转 numpy 并归一化
+        img_array = np.array(img).astype(np.float32) / 255.0
+        img_tensor = torch.from_numpy(img_array).unsqueeze(0)  # (1, H, W, 3)
+
+        return (img_tensor, filename_with_ext)
 
 class LoadImagesFromDirectoryPath:
     @classmethod
@@ -466,5 +519,6 @@ NODE_CLASS_MAPPINGS = {
     "Alta:LoadImage": LoadImage,
     "Alta:LoadImageFromPath": LoadImageFromPath,
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
-    "Alta:LoadImageWithPath": LoadImageWithPath
+    "Alta:LoadImageWithPath": LoadImageWithPath,
+    "Alta:ReadImageFromFile": ReadImageFromFile,
 }
