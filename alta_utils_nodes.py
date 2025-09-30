@@ -36,9 +36,37 @@ class DynamicTupleNode:
             if key in kwargs and kwargs[key] is not None:
                 values.append(kwargs[key])
         return (tuple(values),)
+    
+
+class MultiRouteNode:
+    """
+    多路路由节点：第1个输入必填，其余输入可选。
+    """
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {         # 必须有的输入
+                "in1": ("ANY", ),
+            },
+            "optional": {         # 可选输入
+                "in2": ("ANY", ),
+                "in3": ("ANY", ),
+                "in4": ("ANY", ),
+            }
+        }
+
+    RETURN_TYPES = ("ANY", "ANY", "ANY", "ANY")
+    RETURN_NAMES = ("out1", "out2", "out3", "out4")
+    FUNCTION = "route"
+    CATEGORY = "Utils/Routing"
+
+    def route(self, in1=None, in2=None, in3=None, in4=None):
+        return (in1, in2, in3, in4)
+
 
 NODE_CLASS_MAPPINGS = {
-    "Alta:MergeNodes": DynamicTupleNode
+    "Alta:MergeNodes": DynamicTupleNode,
+    "Alta:MultiRoute": MultiRouteNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
