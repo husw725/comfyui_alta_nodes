@@ -44,4 +44,11 @@ try:
 except ImportError as e:
     logger.error("Error importing alta_save_str",e)
 
+try:
+    from .alta_utils_nodes import NODE_CLASS_MAPPINGS as UTILS_MAPPING
+    NODE_CLASS_MAPPINGS.update(UTILS_MAPPING)
+    logger.info("alta_utils_nodes loaded")
+except ImportError as e:
+    logger.error("Error importing alta_utils_nodes",e)
+
 logger.warning("================= ALTA NODES LOADED ================")
