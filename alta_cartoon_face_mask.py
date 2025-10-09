@@ -5,36 +5,78 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 
-# ============================================================
-# Core 模型节点：只负责加载 YOLO 模型
-# ============================================================
-class YOLOAnimeFaceModel:
-    """
-    Core 模型节点，负责加载 YOLO 模型
-    输出: model 实例
-    """
+import os
+import urllib.request
+from ultralytics import YOLO
+
+import os
+import urllib.request
+from ultralytics import YOLO
+
+import os
+import urllib.request
+from ultralytics import YOLO
+
+class YOLOFaceModelCore:
+    NODE_INFO = "选择动漫或真人 YOLO 模型，加载后输出 yolo_model，可复用到其他节点"
+
+    MODEL_OPTIONS = {
+        "yolov8n_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8n_animeface.pt", "~1M", "速度快，精度低"),
+        "yolov8s_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8s_animeface.pt", "~7M", "精度中等，速度快"),
+        "yolov8m_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8m_animeface.pt", "~25M", "精度较高，速度适中"),
+        "yolov8l_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8l_animeface.pt", "~47M", "精度高，速度慢"),
+        "yolov8x6_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt", "~142M", "精度极高，推理慢"),
+        "yolov8n_face": ("https://huggingface.co/ultralytics/yolov8n-face/resolve/main/yolov8n-face.pt", "~1M", "速度快，精度低"),
+        "yolov8s_face": ("https://huggingface.co/ultralytics/yolov8s-face/resolve/main/yolov8s-face.pt", "~7M", "精度中等，速度快"),
+    }
+
+    # 节点内缓存模型，保证同一个模型只加载一次
+    _cached_models = {}
+
     @classmethod
     def INPUT_TYPES(cls):
-        return {"required": {}}
+        return {
+            "required": {
+                "model_name": (
+                    "STRING",
+                    {
+                        "default": "yolov8x6_animeface",
+                        "choices": list(cls.MODEL_OPTIONS.keys())
+                    }
+                )
+            }
+        }
 
     RETURN_TYPES = ("MODEL",)
     RETURN_NAMES = ("yolo_model",)
     FUNCTION = "load_model"
     CATEGORY = "Alta"
 
-    def load_model(self):
+    def load_model(self, model_name):
+        # 如果缓存中有，直接复用
+        if model_name in self._cached_models:
+            print(f"[INFO] 使用缓存模型: {model_name}")
+            return (self._cached_models[model_name],)
+
+        # 获取模型信息
+        url, param, desc = self.MODEL_OPTIONS[model_name]
+        print(f"[INFO] 选择模型: {model_name}, 参数量: {param}, 描述: {desc}")
+
+        # 确保模型目录存在
         MODEL_DIR = os.path.join(os.path.dirname(__file__), "model")
-        MODEL_PATH = os.path.join(MODEL_DIR, "yolov8x6_animeface.pt")
-        
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        MODEL_PATH = os.path.join(MODEL_DIR, f"{model_name}.pt")
+
+        # 下载模型（如果不存在）
         if not os.path.exists(MODEL_PATH):
-            os.makedirs(MODEL_DIR, exist_ok=True)
-            model_url = "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt"
             print(f"[INFO] 模型不存在，正在下载 {MODEL_PATH} ...")
-            urllib.request.urlretrieve(model_url, MODEL_PATH)
-            print("✅ 模型下载完成！")
-        
+            urllib.request.urlretrieve(url, MODEL_PATH)
+            print(f"✅ 模型下载完成: {MODEL_PATH}")
+
+        # 加载模型
         model = YOLO(MODEL_PATH)
-        print(f"✅ YOLO 模型已加载: {MODEL_PATH}")
+        self._cached_models[model_name] = model
+        print(f"✅ 模型加载成功: {MODEL_PATH}")
         return (model,)
 
 
@@ -90,16 +132,40 @@ class AltaCartoonFaceMask:
         mask_tensor = torch.from_numpy(mask_rgb.astype(np.float32) / 255.0).unsqueeze(0)
         return (mask_tensor,)
 
+class CoreDropdownExample:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "option": (
+                    "STRING",
+                    {
+                        "default": "A",
+                        "choices": ["A", "B", "C"],  # 这里是下拉内容
+                        "multiselect": False  # 是否支持多选，False 是单选
+                    }
+                )
+            }
+        }
 
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("selected_option",)
+    FUNCTION = "choose_option"
+    CATEGORY = "Test"
+
+    def choose_option(self, option):
+        print(f"[INFO] 选择了: {option}")
+        return (option,)
+    
 # ============================================================
 # 节点注册
 # ============================================================
 NODE_CLASS_MAPPINGS = {
-    "Alta:YOLOAnimeFaceModel": YOLOAnimeFaceModel,
+    "Alta:YOLOFaceModelCore": YOLOFaceModelCore,
     "Alta:CartoonFaceMask": AltaCartoonFaceMask
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Alta:YOLOAnimeFaceModel": "Alta YOLO AnimeFace Model",
+    "Alta:YOLOFaceModelCore": "Alta YOLO Face Model",
     "Alta:CartoonFaceMask": "Alta Cartoon Face Mask"
 }
