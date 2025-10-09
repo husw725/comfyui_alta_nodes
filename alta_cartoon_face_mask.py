@@ -6,13 +6,27 @@ from PIL import Image
 from ultralytics import YOLO
 
 # ============================================================
-# 模型加载（仅一次）
+# 模型加载（自动下载 + 一次加载）
 # ============================================================
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model", "yolov8x6_animeface.pt")
+import os
+import urllib.request
+from ultralytics import YOLO
 
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "model")
+MODEL_PATH = os.path.join(MODEL_DIR, "yolov8x6_animeface.pt")
+
+# 如果模型不存在，则下载
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"❌ YOLO 模型未找到: {MODEL_PATH}")
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    print(f"[INFO] YOLO 模型未找到，正在下载到 {MODEL_PATH} ...")
+    model_url = "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt"
+    try:
+        urllib.request.urlretrieve(model_url, MODEL_PATH)
+        print("✅ YOLO 模型下载完成！")
+    except Exception as e:
+        print(f"❌ 模型下载失败: {e}")
 
+# 加载模型
 try:
     yolo_model = YOLO(MODEL_PATH)
     print(f"✅ YOLO 模型已加载: {MODEL_PATH}")
