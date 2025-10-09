@@ -162,10 +162,10 @@ class CoreDropdownExample:
 # ============================================================
 NODE_CLASS_MAPPINGS = {
     "Alta:YOLOFaceModelCore": YOLOFaceModelCore,
-    "Alta:CartoonFaceMask": AltaCartoonFaceMask
+    "Alta:GetFaceMask": AltaCartoonFaceMask
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Alta:YOLOFaceModelCore": "Alta YOLO Face Model",
-    "Alta:CartoonFaceMask": "Alta Cartoon Face Mask"
+    "Alta:GetFaceMask": "Alta Cartoon Face Mask"
 }
