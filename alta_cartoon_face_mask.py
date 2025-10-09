@@ -1,53 +1,60 @@
 import os
+import urllib.request
 import cv2
 import numpy as np
 import torch
-from PIL import Image
 from ultralytics import YOLO
 
 # ============================================================
-# 模型加载（自动下载 + 一次加载）
+# Core 模型节点：只负责加载 YOLO 模型
 # ============================================================
-import os
-import urllib.request
-from ultralytics import YOLO
+class YOLOAnimeFaceModel:
+    """
+    Core 模型节点，负责加载 YOLO 模型
+    输出: model 实例
+    """
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {}}
 
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "model")
-MODEL_PATH = os.path.join(MODEL_DIR, "yolov8x6_animeface.pt")
+    RETURN_TYPES = ("MODEL",)
+    RETURN_NAMES = ("yolo_model",)
+    FUNCTION = "load_model"
+    CATEGORY = "Alta"
 
-# 如果模型不存在，则下载
-if not os.path.exists(MODEL_PATH):
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    print(f"[INFO] YOLO 模型未找到，正在下载到 {MODEL_PATH} ...")
-    model_url = "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt"
-    try:
-        urllib.request.urlretrieve(model_url, MODEL_PATH)
-        print("✅ YOLO 模型下载完成！")
-    except Exception as e:
-        print(f"❌ 模型下载失败: {e}")
+    def load_model(self):
+        MODEL_DIR = os.path.join(os.path.dirname(__file__), "model")
+        MODEL_PATH = os.path.join(MODEL_DIR, "yolov8x6_animeface.pt")
+        
+        if not os.path.exists(MODEL_PATH):
+            os.makedirs(MODEL_DIR, exist_ok=True)
+            model_url = "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt"
+            print(f"[INFO] 模型不存在，正在下载 {MODEL_PATH} ...")
+            urllib.request.urlretrieve(model_url, MODEL_PATH)
+            print("✅ 模型下载完成！")
+        
+        model = YOLO(MODEL_PATH)
+        print(f"✅ YOLO 模型已加载: {MODEL_PATH}")
+        return (model,)
 
-# 加载模型
-try:
-    yolo_model = YOLO(MODEL_PATH)
-    print(f"✅ YOLO 模型已加载: {MODEL_PATH}")
-except Exception as e:
-    raise RuntimeError(f"❌ 无法加载 YOLO 模型: {e}")
 
 # ============================================================
-# 节点定义
+# CartoonFaceMask 节点：通过参数接收模型
 # ============================================================
 class AltaCartoonFaceMask:
     """
-    输入: IMAGE (torch.Tensor, [1,H,W,3], float32, 0~1)
-    输出: IMAGE (torch.Tensor, [1,H,W,3], float32, 0~1)
-    功能: 使用 YOLO 检测卡通人脸，并通过 GrabCut 生成 mask。
+    输入:
+        - image: torch.Tensor [1,H,W,3], float32 0~1
+        - yolo_model: MODEL
+    输出:
+        - face_mask: torch.Tensor [1,H,W,3], float32 0~1
     """
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "image": ("IMAGE",),
+                "yolo_model": ("MODEL",),
             }
         }
 
@@ -56,14 +63,13 @@ class AltaCartoonFaceMask:
     FUNCTION = "create_face_mask"
     CATEGORY = "Alta"
 
-    def create_face_mask(self, image: torch.Tensor):
-        # ========== [1] Tensor -> numpy ==========
-        image = image.squeeze(0)  # [1,H,W,3] -> [H,W,3]
-        img_rgb = (image.numpy() * 255).astype(np.uint8)
+    def create_face_mask(self, image: torch.Tensor, yolo_model):
+        # Tensor -> numpy
+        img_rgb = (image.squeeze(0).numpy() * 255).astype(np.uint8)
         img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
         h, w = img_bgr.shape[:2]
 
-        # ========== [2] 人脸检测 ==========
+        # YOLO 检测
         results = yolo_model(img_bgr)[0]
         mask_total = np.zeros((h, w), np.uint8)
 
@@ -79,10 +85,9 @@ class AltaCartoonFaceMask:
             mask_bin = np.where((mask == 2) | (mask == 0), 0, 255).astype(np.uint8)
             mask_total = cv2.bitwise_or(mask_total, mask_bin)
 
-        # ========== [3] 转为 ComfyUI 可识别格式 ==========
+        # 转回 tensor
         mask_rgb = cv2.cvtColor(mask_total, cv2.COLOR_GRAY2RGB)
         mask_tensor = torch.from_numpy(mask_rgb.astype(np.float32) / 255.0).unsqueeze(0)
-
         return (mask_tensor,)
 
 
@@ -90,9 +95,11 @@ class AltaCartoonFaceMask:
 # 节点注册
 # ============================================================
 NODE_CLASS_MAPPINGS = {
+    "Alta:YOLOAnimeFaceModel": YOLOAnimeFaceModel,
     "Alta:CartoonFaceMask": AltaCartoonFaceMask
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "Alta:YOLOAnimeFaceModel": "Alta YOLO AnimeFace Model",
     "Alta:CartoonFaceMask": "Alta Cartoon Face Mask"
 }
