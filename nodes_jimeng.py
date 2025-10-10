@@ -11,6 +11,7 @@ import base64
 import torch
 import time
 import json
+import requests
 from comfy_api_nodes.apinode_utils import (
     process_image_response
 )
@@ -18,34 +19,18 @@ from comfy_api.latest import io as comfy_io
 from comfy_api_nodes.apinode_utils import (
     tensor_to_base64_string,
     download_url_to_video_output,
-    upload_video_to_comfyapi,
-    upload_audio_to_comfyapi,
-    download_url_to_image_tensor,
 )
 from comfy_api_nodes.mapper_utils import model_field_to_node_input
 from comfy_api_nodes.util.validation_utils import (
     validate_image_dimensions,
     validate_image_aspect_ratio,
-    validate_video_dimensions,
-    validate_video_duration,
 )
-from comfy_api.input.basic_types import AudioInput
-from comfy_api.input.video_types import VideoInput
 from comfy.comfy_types.node_typing import IO, ComfyNodeABC
 from pydantic import BaseModel, Field
-
 from volcengine.visual.VisualService import VisualService
 
 
 JIMENG_API_VERSION = "v1"
-# PATH_TEXT_TO_VIDEO = f"/proxy/jimeng/{JIMENG_API_VERSION}/videos/text2video"
-# PATH_IMAGE_TO_VIDEO = f"/proxy/jimeng/{JIMENG_API_VERSION}/videos/image2video"
-# PATH_VIDEO_EXTEND = f"/proxy/jimeng/{JIMENG_API_VERSION}/videos/video-extend"
-# PATH_LIP_SYNC = f"/proxy/jimeng/{JIMENG_API_VERSION}/videos/lip-sync"
-# PATH_VIDEO_EFFECTS = f"/proxy/jimeng/{JIMENG_API_VERSION}/videos/effects"
-# PATH_CHARACTER_IMAGE = f"/proxy/jimeng/{JIMENG_API_VERSION}/images/generations"
-# PATH_VIRTUAL_TRY_ON = f"/proxy/jimeng/{JIMENG_API_VERSION}/images/kolors-virtual-try-on"
-# PATH_IMAGE_GENERATIONS = f"/proxy/jimeng/{JIMENG_API_VERSION}/images/generations"
 
 # MAX_PROMPT_LENGTH_T2V = 2500
 MAX_PROMPT_LENGTH_T2I = 800
@@ -564,10 +549,102 @@ class JimengI2VTaskQueryNode(JimengNodeBase):
                         f"视频生成结果查询异常 response:\n{json.dumps(response, indent=4)}")
 
 
+class AltaJimengWrapNode(ComfyNodeABC):
+    """Jimeng Image to Video Wrap Node"""
+    FUNCTION = "api_call"
+    # API_NODE = True
+    OUTPUT_NODE = True
+    CATEGORY = "Alta"
+    RETURN_TYPES = ("VIDEO", )
+    RETURN_NAMES = ("VIDEO", )
+    DESCRIPTION = "Jimeng Image to Video Wrap Node"
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "sid_tt": (
+                    IO.STRING, {
+                        "tooltip": "Jimemg cookie data"
+                    }
+                ),
+                "start_frame": (
+                    IO.IMAGE, {
+                        "tooltip": "start_frame",
+                    }
+                ),
+                "tail_frame": (
+                    IO.IMAGE, {
+                        "tooltip": "start_frame",
+                    }
+                ),
+            },
+            "optional": {
+                "prompt": (
+                    IO.STRING, {
+                        "tooltip": "prompt", "multiline": True
+                    }
+                ),
+                # "seed": model_field_to_node_input(
+                #     IO.INT,
+                #     AltaImage2VideoRequest,
+                #     "seed",
+                #     min=-1,
+                #     max=0xFFFFFFF,
+                #     default=-1
+                # ),
+                # "duration": model_field_to_node_input(
+                #     IO.COMBO,
+                #     AltaImage2VideoRequest,
+                #     "duration",
+                #     enum_type=AltaVideoGenDuration,
+                #     default=AltaVideoGenDuration.field_5
+                # ),
+                # "aspect_ratio": model_field_to_node_input(
+                #     IO.COMBO,
+                #     AltaImage2VideoRequest,
+                #     "aspect_ratio",
+                #     enum_type=AltaVideoGenAspectRatio,
+                # )
+            },
+        }
+
+    async def api_call(
+        self,
+        sid_tt: str,
+        start_frame: torch.Tensor,
+        tail_frame: torch.Tensor,
+        prompt: str = '',
+        # seed: int = -1,
+        # duration: str = AltaVideoGenDuration.field_5,
+        **kwargs,
+    ) -> str:
+        sid_tt = "74112956ac57026f9f8bd1fb42c56695"
+        validate_prompts(prompt, MAX_PROMPT_LENGTH_I2V)
+        validate_input_image(start_frame)
+        if tail_frame is not None:
+            validate_input_image(tail_frame)
+
+        images = [tensor_to_base64_string(start_frame)]
+        if tail_frame is not None:
+            images.append(tensor_to_base64_string(tail_frame))
+        form = {
+            "prompt": prompt,
+            "binary_data_base64": images,
+        }
+        api = "http://10.0.26.198:8080/adsmanager/api/playwright/generateVideo"
+        r = requests.post(api, json={"prompt": prompt,
+                                     "sid_tt": sid_tt, "binary_data_base64": images})
+        print(r.json())
+
+        return comfy_io.NodeOutput(await download_url_to_video_output(r.json()['data']))
+
+
 NODE_CLASS_MAPPINGS = {
-    "Alta:JimengText2Image": JimengText2ImageNode,
-    "Alta:JiMengImage2Video": JimengImage2VideoNode,
-    "Alta:JiMengImage2VideoQuery": JimengI2VTaskQueryNode
+    "Alta:即梦API文生图": JimengText2ImageNode,
+    "Alta:即梦API图生视频": JimengImage2VideoNode,
+    "Alta:即梦API图生视频结果查询": JimengI2VTaskQueryNode,
+    "Alta:即梦Web图生视频": AltaJimengWrapNode
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
