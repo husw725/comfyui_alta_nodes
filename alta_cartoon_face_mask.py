@@ -131,31 +131,6 @@ class AltaCartoonFaceMask:
         mask_rgb = cv2.cvtColor(mask_total, cv2.COLOR_GRAY2RGB)
         mask_tensor = torch.from_numpy(mask_rgb.astype(np.float32) / 255.0).unsqueeze(0)
         return (mask_tensor,)
-
-class CoreDropdownExample:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "option": (
-                    "STRING",
-                    {
-                        "default": "A",
-                        "choices": ["A", "B", "C"],  # 这里是下拉内容
-                        "multiselect": False  # 是否支持多选，False 是单选
-                    }
-                )
-            }
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("selected_option",)
-    FUNCTION = "choose_option"
-    CATEGORY = "Test"
-
-    def choose_option(self, option):
-        print(f"[INFO] 选择了: {option}")
-        return (option,)
     
 # ============================================================
 # 节点注册

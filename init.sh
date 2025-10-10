@@ -17,7 +17,7 @@ fi
 
 # Install dependencies
 echo "🚀 Installing ALTA node dependencies..."
-"$VENV_PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+"$VENV_PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
 
 if [ $? -eq 0 ]; then
     echo "✅ ALTA NODES LOAD SUCCESS"

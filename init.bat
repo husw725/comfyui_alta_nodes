@@ -1,6 +1,6 @@
 @echo off
 REM ===============================================
-REM Install dependencies for ALTA custom node
+REM Install dependencies for ALTA custom node (with Tsinghua mirror)
 REM ===============================================
 
 setlocal
@@ -14,8 +14,8 @@ if not exist "%VENV_PYTHON%" (
     exit /b 1
 )
 
-echo 🚀 Installing ALTA node dependencies...
-"%VENV_PYTHON%" -m pip install -r "%SCRIPT_DIR%requirements.txt"
+echo 🚀 Installing ALTA node dependencies from Tsinghua mirror...
+"%VENV_PYTHON%" -m pip install -r "%SCRIPT_DIR%requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
 
 if %errorlevel% equ 0 (
     echo ✅ ALTA NODES LOAD SUCCESS
@@ -23,4 +23,5 @@ if %errorlevel% equ 0 (
     echo ❌ Installation failed
     exit /b 1
 )
+
 endlocal
