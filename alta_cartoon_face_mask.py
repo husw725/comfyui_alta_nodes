@@ -21,13 +21,17 @@ class YOLOFaceModelCore:
     NODE_INFO = "选择动漫或真人 YOLO 模型，加载后输出 yolo_model，可复用到其他节点"
 
     MODEL_OPTIONS = {
-        "yolov8n_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8n_animeface.pt", "~1M", "速度快，精度低"),
-        "yolov8s_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8s_animeface.pt", "~7M", "精度中等，速度快"),
-        "yolov8m_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8m_animeface.pt", "~25M", "精度较高，速度适中"),
-        "yolov8l_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8l_animeface.pt", "~47M", "精度高，速度慢"),
-        "yolov8x6_animeface": ("https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt", "~142M", "精度极高，推理慢"),
-        "yolov8n_face": ("https://huggingface.co/ultralytics/yolov8n-face/resolve/main/yolov8n-face.pt", "~1M", "速度快，精度低"),
-        "yolov8s_face": ("https://huggingface.co/ultralytics/yolov8s-face/resolve/main/yolov8s-face.pt", "~7M", "精度中等，速度快"),
+       # 只保留存在的 animeface 模型
+    "yolov8x6_animeface": (
+        "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8x6_animeface.pt",
+        "~142M",
+        "精度极高，推理慢"
+    ),
+    # "yolov8l_animeface": (
+    #     "https://huggingface.co/Fuyucchi/yolov8_animeface/resolve/main/yolov8l_animeface.pt",
+    #     "~86M",
+    #     "精度高，推理中等"
+    # ),
     }
 
     # 节点内缓存模型，保证同一个模型只加载一次
