@@ -6,10 +6,11 @@ from server import PromptServer
 
 
 class AltaDownloader:
-    RETURN_TYPES = ()
-    OUTPUT_NODE = True
+    # OUTPUT_NODE = True
     CATEGORY = "Alta"
     FUNCTION = "download"
+    RETURN_TYPES = ("STRING", )
+    RETURN_NAMES = ("FILE_PATH", )
 
     def __init__(self):
         self.status = "Idle"

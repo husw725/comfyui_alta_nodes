@@ -51,14 +51,6 @@ try:
 except ImportError as e:
     logger.error("Error importing alta_utils_nodes",e)
 
-
-try:
-    from .alta_cartoon_face_mask import NODE_CLASS_MAPPINGS as cfm
-    NODE_CLASS_MAPPINGS.update(cfm)
-    logger.info("cartoon_face_mask loaded")
-except ImportError as e:
-    logger.error("Error importing cartoon_face_mask",e)
-
 try:
     from .alta_merge_images import NODE_CLASS_MAPPINGS as __MERGE_MAPPING
     NODE_CLASS_MAPPINGS.update(__MERGE_MAPPING)
@@ -79,5 +71,15 @@ try:
     logger.info("alta_downloader loaded")
 except ImportError as e:
     logger.error("Error importing alta_downloader", e)
+
+try:
+    from .alta_cartoon_face_mask import NODE_CLASS_MAPPINGS as cfm
+    NODE_CLASS_MAPPINGS.update(cfm)
+    logger.info("cartoon_face_mask loaded")
+except ImportError as e:
+    logger.error("Error importing cartoon_face_mask",e)
+except Exception as e:
+    logger.error("Error importing cartoon_face_mask", e)
+
 
 logger.warning("================= ALTA NODES LOADED ================")

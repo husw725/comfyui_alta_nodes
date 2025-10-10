@@ -99,7 +99,12 @@ class AltaAPITranscribeAudioNode(ComfyNodeABC):
                 )
             },
             "hidden": {
-                "unique_id": "UNIQUE_ID",
+                "seed": (
+                    IO.INT,
+                    {
+                        "default": -1
+                    }
+                ),
             }
         }
 
@@ -107,7 +112,7 @@ class AltaAPITranscribeAudioNode(ComfyNodeABC):
         self,
         video_name: str,
         video_number: str,
-        node_id: Optional[str] = None,
+        seed: Optional[int] = None,
         **kwargs,
     ) -> str:
         api = "http://44.243.33.213:8000/step-2"
