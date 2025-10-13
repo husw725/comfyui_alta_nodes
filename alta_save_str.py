@@ -197,10 +197,8 @@ class ListFilesByExt:
 
         filepaths.sort()
         return (filepaths, len(filepaths))
+    
 
-    @classmethod
-    def VALIDATE_INPUTS(cls, folder, **kwargs):
-        return isinstance(folder, str) and len(folder) > 0
 class ListAllFiles:
     @classmethod
     def INPUT_TYPES(cls):
@@ -234,9 +232,6 @@ class ListAllFiles:
         filepaths.sort()
         return (filepaths, len(filepaths))
 
-    @classmethod
-    def VALIDATE_INPUTS(cls, folder, **kwargs):
-        return isinstance(folder, str) and len(folder) > 0
 
 NODE_CLASS_MAPPINGS = {
     "Alta:SaveStringToFile": WriteStringToFile,
