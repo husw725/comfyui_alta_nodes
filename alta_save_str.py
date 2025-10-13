@@ -152,16 +152,36 @@ class BuildFilePath:
     
     import os
 
-BIGMAX = 0xFFFFFFFF
+import os
+import hashlib
 
+def simple_hash(value: str):
+    """简单字符串哈希，用于 IS_CHANGED"""
+    return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
+
+def list_files_in_folder(folder, exts=None, recursive=True):
+    filepaths = []
+    walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
+    for root, _, files in walker:
+        for f in files:
+            if exts:
+                if any(f.lower().endswith(ext) for ext in exts):
+                    filepaths.append(os.path.join(root, f))
+            else:
+                filepaths.append(os.path.join(root, f))
+    filepaths.sort()
+    return filepaths
+
+
+# ======================================================
+# ✅ 1. ListFilesByExt —— 带后缀筛选
+# ======================================================
 class ListFilesByExt:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "folder": ("STRING", {
-                    "placeholder": "X://path/to/folder"
-                }),
+                "folder": ("STRING", {"placeholder": "X://path/to/folder"}),
             },
             "optional": {
                 "extensions": ("STRING", {
@@ -170,67 +190,75 @@ class ListFilesByExt:
                 }),
                 "recursive": ("BOOL", {"default": True}),
             },
+            "hidden": {
+                "unique_id": "UNIQUE_ID"
+            },
         }
 
+    CATEGORY = "Alta"
     RETURN_TYPES = ("LIST", "INT")
     RETURN_NAMES = ("filepaths", "file_count")
     FUNCTION = "list_files"
-    CATEGORY = "Alta"
 
-    def list_files(self, folder: str, extensions: str = "", recursive: bool = True):
+    def list_files(self, folder: str, extensions: str = "", recursive: bool = True, **kwargs):
         folder = folder.strip("\"' ")
         if not os.path.isdir(folder):
             raise Exception(f"Invalid folder path: {folder}")
 
-        # 处理后缀
-        ext_list = [e.strip().lower() for e in extensions.split(",") if e.strip()]
-        if not ext_list:
-            ext_list = [".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"]
+        exts = [e.strip().lower() for e in extensions.split(",") if e.strip()]
+        if not exts:
+            exts = [".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"]
 
-        # 搜索文件
-        filepaths = []
-        walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
-        for root, _, files in walker:
-            for f in files:
-                if any(f.lower().endswith(ext) for ext in ext_list):
-                    filepaths.append(os.path.join(root, f))
+        filepaths = list_files_in_folder(folder, exts, recursive)
+        return filepaths, len(filepaths)
 
-        filepaths.sort()
-        return (filepaths, len(filepaths))
-    
+    @classmethod
+    def IS_CHANGED(cls, folder, extensions="", recursive=True, **kwargs):
+        return simple_hash(f"{folder}-{extensions}-{recursive}")
 
+    @classmethod
+    def VALIDATE_INPUTS(cls, folder, **kwargs):
+        return os.path.isdir(folder)
+
+
+# ======================================================
+# ✅ 2. ListAllFiles —— 不区分后缀
+# ======================================================
 class ListAllFiles:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "folder": ("STRING", {
-                    "placeholder": "X://path/to/folder"
-                }),
+                "folder": ("STRING", {"placeholder": "X://path/to/folder"}),
             },
             "optional": {
                 "recursive": ("BOOL", {"default": True}),
             },
+            "hidden": {
+                "unique_id": "UNIQUE_ID"
+            },
         }
 
+    CATEGORY = "Alta"
     RETURN_TYPES = ("LIST", "INT")
     RETURN_NAMES = ("filepaths", "file_count")
     FUNCTION = "list_all"
-    CATEGORY = "Alta"
 
-    def list_all(self, folder: str, recursive: bool = True):
+    def list_all(self, folder: str, recursive: bool = True, **kwargs):
         folder = folder.strip("\"' ")
         if not os.path.isdir(folder):
             raise Exception(f"Invalid folder path: {folder}")
 
-        filepaths = []
-        walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
-        for root, _, files in walker:
-            for f in files:
-                filepaths.append(os.path.join(root, f))
+        filepaths = list_files_in_folder(folder, None, recursive)
+        return filepaths, len(filepaths)
 
-        filepaths.sort()
-        return (filepaths, len(filepaths))
+    @classmethod
+    def IS_CHANGED(cls, folder, recursive=True, **kwargs):
+        return simple_hash(f"{folder}-{recursive}")
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, folder, **kwargs):
+        return os.path.isdir(folder)
 
 
 NODE_CLASS_MAPPINGS = {
