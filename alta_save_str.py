@@ -149,6 +149,61 @@ class BuildFilePath:
     def VALIDATE_INPUTS(cls, filename, folder, extension):
         # 只检查 folder 是否存在
         return os.path.isdir(folder)
+    
+    import os
+
+BIGMAX = 0xFFFFFFFF
+
+class ListFilesByExtension:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "directory": ("STRING", {"placeholder": "X://path/to/folder"}),
+            },
+            "optional": {
+                "extensions": ("STRING", {"default": ".png,.jpg,.jpeg,.bmp,.tiff,.webp", 
+                                          "multiline": False, 
+                                          "tooltip": "Comma-separated list of file extensions"}),
+                "recursive": ("BOOL", {"default": True}),
+            },
+            "hidden": {
+                "unique_id": "UNIQUE_ID"
+            },
+        }
+
+    RETURN_TYPES = ("LIST", "INT")
+    RETURN_NAMES = ("filepaths", "file_count")
+    FUNCTION = "list_files"
+    CATEGORY = "Alta"
+
+    def list_files(self, directory: str, extensions: str = "", recursive: bool = True, **kwargs):
+        directory = directory.strip("\"' ")
+        if not os.path.isdir(directory):
+            raise Exception(f"Invalid directory path: {directory}")
+
+        # 处理后缀列表
+        ext_list = [e.strip().lower() for e in extensions.split(",") if e.strip()]
+        if not ext_list:
+            ext_list = [".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"]
+
+        # 扫描目录
+        filepaths = []
+        if recursive:
+            for root, _, files in os.walk(directory):
+                for f in files:
+                    if any(f.lower().endswith(ext) for ext in ext_list):
+                        filepaths.append(os.path.join(root, f))
+        else:
+            for f in os.listdir(directory):
+                full = os.path.join(directory, f)
+                if os.path.isfile(full) and any(f.lower().endswith(ext) for ext in ext_list):
+                    filepaths.append(full)
+
+        filepaths.sort()
+        file_count = len(filepaths)
+
+        return (filepaths, file_count)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -156,5 +211,5 @@ NODE_CLASS_MAPPINGS = {
     "Alta:GetFilenameNoExt": GetFilenameNoExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
     "Alta:BuildFilePath": BuildFilePath,  # 新增节点
-
+    "Alta:ListFilesByExtension": ListFilesByExtension,
 }
