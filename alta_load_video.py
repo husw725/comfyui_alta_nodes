@@ -763,6 +763,36 @@ class LoadVideosFromFolder:
         return os.path.isdir(folder)
 
 
+class LoadFilesFromFolder:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "folder": ("STRING", {"placeholder": "X://insert/folder/path"}),
+            },
+            "optional": {},
+            "hidden": {
+                "unique_id": "UNIQUE_ID"
+            },
+        }
+
+    CATEGORY = "Alta"
+    RETURN_TYPES = ("LIST", "INT")
+    RETURN_NAMES = ("file_paths", "file_count")
+    FUNCTION = "load_files"
+
+    def load_files(self, folder, **kwargs):
+        file_paths = [os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+        file_count = len(file_paths)
+        return file_paths, file_count
+
+    @classmethod
+    def IS_CHANGED(cls, folder, **kwargs):
+        return simple_hash(folder)
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, folder):
+        return os.path.isdir(folder)
 
 class LoadVideo:
     # 定义输入输出
@@ -799,4 +829,5 @@ NODE_CLASS_MAPPINGS = {
     "Alta:LoadVideoPath": LoadVideoPath,
     "Alta:LoadVideosFromFolder": LoadVideosFromFolder,
     "Alta:LoadVideo": LoadVideo,
+    "Alta:LoadFilesFromFolder":LoadFilesFromFolder,
 }

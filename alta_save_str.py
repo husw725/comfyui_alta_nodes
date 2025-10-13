@@ -231,9 +231,6 @@ class ListAllFiles:
             "required": {
                 "folder": ("STRING", {"placeholder": "X://path/to/folder"}),
             },
-            "optional": {
-                "recursive": ("BOOL", {"default": True}),
-            },
             "hidden": {
                 "unique_id": "UNIQUE_ID"
             },
@@ -244,7 +241,7 @@ class ListAllFiles:
     RETURN_NAMES = ("filepaths", "file_count")
     FUNCTION = "list_all"
 
-    def list_all(self, folder: str, recursive: bool = True, **kwargs):
+    def list_all(self, folder: str, **kwargs):
         folder = folder.strip("\"' ")
         if not os.path.isdir(folder):
             raise Exception(f"Invalid folder path: {folder}")
@@ -253,8 +250,8 @@ class ListAllFiles:
         return filepaths, len(filepaths)
 
     @classmethod
-    def IS_CHANGED(cls, folder, recursive=True, **kwargs):
-        return simple_hash(f"{folder}-{recursive}")
+    def IS_CHANGED(cls, folder, **kwargs):
+        return simple_hash(f"{folder}")
 
     @classmethod
     def VALIDATE_INPUTS(cls, folder, **kwargs):
