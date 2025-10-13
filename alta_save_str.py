@@ -154,7 +154,7 @@ class BuildFilePath:
 
 BIGMAX = 0xFFFFFFFF
 
-class ListFilesByExtension:
+class ListFilesByExt:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -208,5 +208,5 @@ NODE_CLASS_MAPPINGS = {
     "Alta:GetFilenameNoExt": GetFilenameNoExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
     "Alta:BuildFilePath": BuildFilePath,  # 新增节点
-    "Alta:ListFilesByExtension": ListFilesByExtension,
+    "Alta:ListFilesByExt": ListFilesByExt
 }
