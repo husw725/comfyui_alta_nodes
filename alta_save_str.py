@@ -103,10 +103,58 @@ class ReadStringFromFile:
             content = f.read()
 
         return (content,)
+    
+import os
+
+class BuildFilePath:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # 输入文件名（不带扩展名）
+                "filename": ("STRING", {
+                    "default": "filename"
+                }),
+                # 文件所在目录
+                "folder": ("STRING", {
+                    "default": "outputs"
+                }),
+                # 新扩展名
+                "extension": ("STRING", {
+                    "default": "txt"
+                }),
+            },
+            "optional": {
+                
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("file_path",)
+    FUNCTION = "build_path"
+    CATEGORY = "Utils"
+
+    def build_path(self, filename, folder, extension):
+        # 去掉多余空格与引号
+        folder = folder.strip("\"' ")
+        filename = filename.strip("\"' ")
+        extension = extension.strip(". \"' ")
+
+        # 拼接路径
+        file_path = os.path.join(folder, f"{filename}.{extension}")
+
+        return (file_path,)
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, filename, folder, extension):
+        # 只检查 folder 是否存在
+        return os.path.isdir(folder)
 
 
 NODE_CLASS_MAPPINGS = {
     "Alta:SaveStringToFile": WriteStringToFile,
     "Alta:GetFilenameNoExt": GetFilenameNoExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
+    "Alta:BuildFilePath": BuildFilePath,  # 新增节点
+
 }
