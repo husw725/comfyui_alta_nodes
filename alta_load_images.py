@@ -574,7 +574,7 @@ class ExtractFilename:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "extract"
-    CATEGORY = "Utils"
+    CATEGORY = "Alta"
 
     def extract(self, image):
         filename = image.metadata.get("filename", "")

@@ -88,7 +88,7 @@ class ReadStringFromFile:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "read_file"
-    CATEGORY = "Utils"
+    CATEGORY = "Alta"
 
     def read_file(self, filename, folder, extension):
         # 拼接路径
