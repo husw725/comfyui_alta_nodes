@@ -117,7 +117,7 @@ class BuildFilePath:
                 }),
                 # 文件所在目录
                 "folder": ("STRING", {
-                    "default": "outputs"
+                    "default": "folder"
                 }),
                 # 新扩展名
                 "extension": ("STRING", {
