@@ -159,16 +159,16 @@ class ListFilesByExtension:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "folder": ("STRING", {"placeholder": "X://path/to/folder"}),
+                "folder": ("STRING", {
+                    "placeholder": "X://path/to/folder"
+                }),
             },
             "optional": {
-                "extensions": ("STRING", {"default": ".png,.jpg,.jpeg,.bmp,.tiff,.webp", 
-                                          "multiline": False, 
-                                          "tooltip": "Comma-separated list of file extensions"}),
+                "extensions": ("STRING", {
+                    "default": ".png,.jpg,.jpeg,.bmp,.tiff,.webp",
+                    "tooltip": "Comma-separated file extensions"
+                }),
                 "recursive": ("BOOL", {"default": True}),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID"
             },
         }
 
@@ -177,33 +177,30 @@ class ListFilesByExtension:
     FUNCTION = "list_files"
     CATEGORY = "Alta"
 
-    def list_files(self, directory: str, extensions: str = "", recursive: bool = True, **kwargs):
-        directory = directory.strip("\"' ")
-        if not os.path.isdir(directory):
-            raise Exception(f"Invalid directory path: {directory}")
+    def list_files(self, folder: str, extensions: str = "", recursive: bool = True):
+        folder = folder.strip("\"' ")
+        if not os.path.isdir(folder):
+            raise Exception(f"Invalid folder path: {folder}")
 
-        # 处理后缀列表
+        # 处理后缀
         ext_list = [e.strip().lower() for e in extensions.split(",") if e.strip()]
         if not ext_list:
             ext_list = [".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"]
 
-        # 扫描目录
+        # 搜索文件
         filepaths = []
-        if recursive:
-            for root, _, files in os.walk(directory):
-                for f in files:
-                    if any(f.lower().endswith(ext) for ext in ext_list):
-                        filepaths.append(os.path.join(root, f))
-        else:
-            for f in os.listdir(directory):
-                full = os.path.join(directory, f)
-                if os.path.isfile(full) and any(f.lower().endswith(ext) for ext in ext_list):
-                    filepaths.append(full)
+        walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
+        for root, _, files in walker:
+            for f in files:
+                if any(f.lower().endswith(ext) for ext in ext_list):
+                    filepaths.append(os.path.join(root, f))
 
         filepaths.sort()
-        file_count = len(filepaths)
+        return (filepaths, len(filepaths))
 
-        return (filepaths, file_count)
+    @classmethod
+    def VALIDATE_INPUTS(cls, folder, **kwargs):
+        return isinstance(folder, str) and len(folder) > 0
 
 
 NODE_CLASS_MAPPINGS = {
