@@ -201,12 +201,48 @@ class ListFilesByExt:
     @classmethod
     def VALIDATE_INPUTS(cls, folder, **kwargs):
         return isinstance(folder, str) and len(folder) > 0
+class ListAllFiles:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "folder": ("STRING", {
+                    "placeholder": "X://path/to/folder"
+                }),
+            },
+            "optional": {
+                "recursive": ("BOOL", {"default": True}),
+            },
+        }
 
+    RETURN_TYPES = ("LIST", "INT")
+    RETURN_NAMES = ("filepaths", "file_count")
+    FUNCTION = "list_all"
+    CATEGORY = "Alta"
+
+    def list_all(self, folder: str, recursive: bool = True):
+        folder = folder.strip("\"' ")
+        if not os.path.isdir(folder):
+            raise Exception(f"Invalid folder path: {folder}")
+
+        filepaths = []
+        walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
+        for root, _, files in walker:
+            for f in files:
+                filepaths.append(os.path.join(root, f))
+
+        filepaths.sort()
+        return (filepaths, len(filepaths))
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, folder, **kwargs):
+        return isinstance(folder, str) and len(folder) > 0
 
 NODE_CLASS_MAPPINGS = {
     "Alta:SaveStringToFile": WriteStringToFile,
     "Alta:GetFilenameNoExt": GetFilenameNoExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
     "Alta:BuildFilePath": BuildFilePath,  # 新增节点
-    "Alta:ListFilesByExt": ListFilesByExt
+    "Alta:ListFilesByExt": ListFilesByExt,  # 新增节点
+    "Alta:ListAllFiles": ListAllFiles  # 新增节点
 }
