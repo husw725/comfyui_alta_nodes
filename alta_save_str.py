@@ -159,7 +159,7 @@ class ListFilesByExtension:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "directory": ("STRING", {"placeholder": "X://path/to/folder"}),
+                "folder": ("STRING", {"placeholder": "X://path/to/folder"}),
             },
             "optional": {
                 "extensions": ("STRING", {"default": ".png,.jpg,.jpeg,.bmp,.tiff,.webp", 
