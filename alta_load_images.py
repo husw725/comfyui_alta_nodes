@@ -514,62 +514,7 @@ class ExtractFilename:
         return (filename,)
     
 
-import math
 
-class SelectBestFace:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "faces": ("DICT",),
-                "image_width": ("INT", {"default": 512}),
-                "image_height": ("INT", {"default": 512}),
-            }
-        }
-
-    RETURN_TYPES = ("DICT", "INT")
-    RETURN_NAMES = ("best_face", "best_index")
-    FUNCTION = "select_best_face"
-    CATEGORY = "Alta/Face"
-
-    def select_best_face(self, faces, image_width, image_height):
-        """
-        faces: a dict or list of detected faces, each containing:
-          - bbox: [x, y, w, h]
-          - confidence: float (optional)
-        """
-        if isinstance(faces, dict) and "faces" in faces:
-            faces = faces["faces"]
-
-        if not isinstance(faces, list) or len(faces) == 0:
-            return ({}, -1)
-
-        cx, cy = image_width / 2, image_height / 2
-        best_face = None
-        best_score = -1
-        best_index = -1
-
-        for i, face in enumerate(faces):
-            bbox = face.get("bbox", [0, 0, 0, 0])
-            if len(bbox) < 4:
-                continue
-
-            x, y, w, h = bbox
-            fx, fy = x + w / 2, y + h / 2
-            center_dist = math.sqrt((fx - cx) ** 2 + (fy - cy) ** 2)
-            center_weight = 1.0 / (1.0 + center_dist / (image_width / 2))
-            area = w * h
-            conf = face.get("confidence", 1.0)
-            score = conf * area * center_weight
-
-            if score > best_score:
-                best_face = face
-                best_score = score
-                best_index = i
-
-        return (best_face, best_index)
-    
-    
 # 节点映射
 NODE_CLASS_MAPPINGS = {
     "Alta:GetImageAndPath": GetImageAndPath,
@@ -580,5 +525,4 @@ NODE_CLASS_MAPPINGS = {
     "Alta:LoadImagesPath": LoadImagesFromDirectoryPath,
     "Alta:LoadImageWithPath": LoadImageWithPath,
     "Alta:ReadImageFromFile": ReadImageFromFile,
-    "Alta:SelectBestFace": SelectBestFace,
 }
