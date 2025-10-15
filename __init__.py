@@ -82,4 +82,13 @@ except Exception as e:
     logger.error("Error importing cartoon_face_mask", e)
 
 
+try:
+    from .alta_Wan_optimizer import NODE_CLASS_MAPPINGS as WAN_MAPPING
+    NODE_CLASS_MAPPINGS.update(WAN_MAPPING)
+    logger.info("alta_Wan_optimizer loaded")
+except ImportError as e:
+    logger.error("Error importing alta_Wan_optimizer",e)
+except Exception as e:
+    logger.error("Error importing alta_Wan_optimizer", e)
+
 logger.warning("================= ALTA NODES LOADED ================")

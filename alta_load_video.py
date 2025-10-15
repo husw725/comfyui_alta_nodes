@@ -822,8 +822,6 @@ class LoadVideo:
         # 返回视频对象
         return (VideoFromFile(video_path),)
 
-        return frame
-
 # ===================== 节点映射 =====================
 NODE_CLASS_MAPPINGS = {
     "Alta:LoadVideoPath": LoadVideoPath,
