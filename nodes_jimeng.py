@@ -568,6 +568,8 @@ class AltaJimengWrapNode(ComfyNodeABC):
                         "tooltip": "Jimemg cookie data"
                     }
                 ),
+            },
+            "optional": {
                 "start_frame": (
                     IO.IMAGE, {
                         "tooltip": "start_frame",
@@ -578,8 +580,6 @@ class AltaJimengWrapNode(ComfyNodeABC):
                         "tooltip": "start_frame",
                     }
                 ),
-            },
-            "optional": {
                 "prompt": (
                     IO.STRING, {
                         "tooltip": "prompt", "multiline": True
@@ -612,32 +612,35 @@ class AltaJimengWrapNode(ComfyNodeABC):
     async def api_call(
         self,
         sid_tt: str,
-        start_frame: torch.Tensor,
-        tail_frame: torch.Tensor,
+        start_frame: torch.Tensor = None,
+        tail_frame: torch.Tensor = None,
         prompt: str = '',
         # seed: int = -1,
         # duration: str = AltaVideoGenDuration.field_5,
         **kwargs,
     ) -> str:
-        sid_tt = "74112956ac57026f9f8bd1fb42c56695"
-        validate_prompts(prompt, MAX_PROMPT_LENGTH_I2V)
-        validate_input_image(start_frame)
-        if tail_frame is not None:
-            validate_input_image(tail_frame)
+        try:
+            if sid_tt is None or sid_tt == '':
+                sid_tt = "74112956ac57026f9f8bd1fb42c56695"
+            validate_prompts(prompt, 500)
+            if start_frame is not None:
+                validate_input_image(start_frame)
+            if tail_frame is not None:
+                validate_input_image(tail_frame)
 
-        images = [tensor_to_base64_string(start_frame)]
-        if tail_frame is not None:
-            images.append(tensor_to_base64_string(tail_frame))
-        form = {
-            "prompt": prompt,
-            "binary_data_base64": images,
-        }
-        api = "http://10.0.26.198:8080/adsmanager/api/playwright/generateVideo"
-        r = requests.post(api, json={"prompt": prompt,
-                                     "sid_tt": sid_tt, "binary_data_base64": images})
-        print(r.json())
-
-        return comfy_io.NodeOutput(await download_url_to_video_output(r.json()['data']))
+            images = [tensor_to_base64_string(start_frame) if start_frame is not None else "",
+                    tensor_to_base64_string(tail_frame) if tail_frame is not None else ""]
+            api = "http://10.0.26.198:8080/adsmanager/api/playwright/generateVideo"
+            r = requests.post(api, json={"prompt": prompt,
+                                        "sid_tt": sid_tt, "binary_data_base64": images})
+            result = r.json()
+            print(result)
+            video_url = result['data']
+            if video_url is None or len(video_url) == 0:
+                raise JimengApiError(f"接口请求失败。\n[Code: {result.get('code')} Msg:{result.get('msg')}]")
+            return comfy_io.NodeOutput(await download_url_to_video_output(video_url))
+        except Exception as e:
+            raise JimengApiError(str(e))
 
 
 NODE_CLASS_MAPPINGS = {
