@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from sync import Sync
 from sync.common import Audio, GenerationOptions, Video
 from sync.core.api_error import ApiError
+from sync.core.file import File
 
 # Load .env automatically
 load_dotenv()
@@ -40,8 +41,8 @@ class SyncLipsyncNode:
 
         # Initialize Sync client
         sync = Sync(api_key=api_key)
-        file_audio = Audio(file_path=audio_path)
-        file_video = Video(file_path=video_path)
+        file_audio = File(file_path=audio_path)
+        file_video = File(file_path=video_path)
         try:
             generation = sync.generations.create_with_files(
                 audio=file_audio,
