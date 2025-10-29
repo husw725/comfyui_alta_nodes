@@ -82,4 +82,13 @@ except Exception as e:
     logger.error("Error importing cartoon_face_mask", e)
 
 
+try:
+    from .alta_lipsync_node import NODE_CLASS_MAPPINGS as lipsync_mapping
+    NODE_CLASS_MAPPINGS.update(lipsync_mapping)
+    logger.info("alta_lipsync_node loaded")
+except ImportError as e:
+    logger.error("Error importing alta_lipsync_node",e)
+except Exception as e:
+    logger.error("Error importing alta_lipsync_node", e)
+
 logger.warning("================= ALTA NODES LOADED ================")

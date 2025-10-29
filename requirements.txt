@@ -1,3 +1,5 @@
 volcengine
 openai
 ultralytics
+syncsdk
+python-dotenv
