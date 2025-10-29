@@ -21,7 +21,7 @@ class SyncLipsyncNode:
             "required": {
                 "video_path": ("STRING", {"default": "input_video.mp4"}),
                 "audio_path": ("STRING", {"default": "input_audio.wav"}),
-                "mode": (["loop", "cut","stretch"], {"default": "cut"}),
+                # "mode": (["loop", "cut","stretch"], {"default": "cut"}),
             },
             "optional": {
                 "api_key": ("STRING", {"default": os.getenv("SYNC_API_KEY", "")}),
@@ -35,7 +35,7 @@ class SyncLipsyncNode:
     FUNCTION = "run"
     CATEGORY = "alta/Lipsync"
 
-    def run(self, video_path, audio_path, mode, api_key, poll_interval, download_result):
+    def run(self, video_path, audio_path, api_key, poll_interval, download_result):
         if not api_key:
             raise ValueError("❌ Missing SYNC_API_KEY. Set in .env or pass via api_key input.")
 
@@ -46,7 +46,7 @@ class SyncLipsyncNode:
                 audio=audio_path,
                 video=video_path,
                 model="lipsync-2",
-                options=GenerationOptions(sync_mode=mode),
+                options=GenerationOptions(sync_mode="cut"),
             )
         except ApiError as e:
             raise RuntimeError(
@@ -94,7 +94,7 @@ class SyncLipsyncByUrlInputNode:
             "required": {
                 "video_url": ("STRING", {"default": "https://example.com/input_video.mp4"}),
                 "audio_url": ("STRING", {"default": "https://example.com/input_audio.wav"}),
-                "mode": (["loop", "cut","stretch"], {"default": "cut"}),
+                # "mode": (["loop", "cut","stretch"], {"default": "cut"}),
             },
             "optional": {
                 "api_key": ("STRING", {"default": os.getenv("SYNC_API_KEY", "")}),
@@ -108,7 +108,7 @@ class SyncLipsyncByUrlInputNode:
     FUNCTION = "run"
     CATEGORY = "alta/Lipsync"
 
-    def run(self, video_url, audio_url, mode, api_key, poll_interval, download_result):
+    def run(self, video_url, audio_url, api_key, poll_interval, download_result):
         if not api_key:
             raise ValueError("❌ Missing SYNC_API_KEY. Set in .env or pass via api_key input.")
 
@@ -122,7 +122,9 @@ class SyncLipsyncByUrlInputNode:
                     Audio(url=audio_url),
                 ],
                 model="lipsync-2",
-                options=GenerationOptions(sync_mode=mode),
+                options=GenerationOptions(
+                    sync_mode="cut",
+                ),
             )
         except ApiError as e:
             raise RuntimeError(
