@@ -45,8 +45,7 @@ class SyncLipsyncNode:
             generation = sync.generations.create_with_files(
                 audio=audio_path,
                 video=video_path,
-                model="lipsync-2",
-                options=GenerationOptions(sync_mode="cut_off"),
+                model="lipsync-2"
             )
         except ApiError as e:
             raise RuntimeError(
