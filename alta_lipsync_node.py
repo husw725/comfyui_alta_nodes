@@ -41,12 +41,10 @@ class SyncLipsyncNode:
 
         # Initialize Sync client
         sync = Sync(api_key=api_key)
-        file_audio = File(file_path=audio_path)
-        file_video = File(file_path=video_path)
         try:
             generation = sync.generations.create_with_files(
-                audio=file_audio,
-                video=file_video,
+                audio=audio_path,
+                video=video_path,
                 model="lipsync-2",
                 options=GenerationOptions(sync_mode=mode),
             )
