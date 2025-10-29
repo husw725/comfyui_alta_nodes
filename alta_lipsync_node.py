@@ -46,9 +46,7 @@ class SyncLipsyncNode:
                 audio=audio_path,
                 video=video_path,
                 model="lipsync-2",
-                options=GenerationOptions(
-                    sync_mode="cut",
-                ),
+                options=GenerationOptions(sync_mode="cut_off"),
             )
         except ApiError as e:
             raise RuntimeError(
@@ -124,9 +122,7 @@ class SyncLipsyncByUrlInputNode:
                     Audio(url=audio_url),
                 ],
                 model="lipsync-2",
-                options=GenerationOptions(
-                    sync_mode="cut",
-                ),
+                options=GenerationOptions(sync_mode="cut_off"),
             )
         except ApiError as e:
             raise RuntimeError(
