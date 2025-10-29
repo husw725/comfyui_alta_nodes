@@ -346,7 +346,7 @@ class GetStringByIndex:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("string",)
     FUNCTION = "get_string"
-    CATEGORY = "InspirePack/List"
+    CATEGORY = "Alta/List"
 
     def get_string(self, strings, index: int, pre_value: str = None):
         if not isinstance(strings, (list, tuple)):
@@ -380,7 +380,7 @@ class GetImageAndPath:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("image", "path")
     FUNCTION = "get_image_and_path"
-    CATEGORY = "InspirePack/List"
+    CATEGORY = "Alta/List"
 
     def get_image_and_path(self, images: torch.Tensor, paths, index: int, pre_value: torch.Tensor = None):
         # 校验 batch
