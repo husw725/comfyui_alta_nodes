@@ -15,11 +15,53 @@ class GetFilenameNoExt:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "get_name"
-    CATEGORY = "Utils"
+    CATEGORY = "alta/Utils"
 
     def get_name(self, file_path):
         # 取出文件名（不含路径和后缀）
         name = os.path.splitext(os.path.basename(file_path))[0]
+        return (name,)
+    
+class GetFileFolder:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "file_path": ("STRING", {
+                    "default": "/path/to/video.mp4",
+                    "multiline": False
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "get_name"
+    CATEGORY = "alta/Utils"
+
+    def get_name(self, file_path):
+        # 取出文件夹路径
+        name = os.path.dirname(file_path)
+        return (name,)
+    
+class GetFilenameWithExt:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "file_path": ("STRING", {
+                    "default": "/path/to/video.mp4",
+                    "multiline": False
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "get_name"
+    CATEGORY = "alta/Utils"
+
+    def get_name(self, file_path):
+        # 取出文件名（不含路径和后缀）
+        name = os.path.basename(file_path)
         return (name,)
 
 
@@ -261,6 +303,8 @@ class ListAllFiles:
 NODE_CLASS_MAPPINGS = {
     "Alta:SaveStringToFile": WriteStringToFile,
     "Alta:GetFilenameNoExt": GetFilenameNoExt,
+    "Alta:GetFileFolder": GetFileFolder,
+    "Alta:GetFilenameWithExt": GetFilenameWithExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
     "Alta:BuildFilePath": BuildFilePath,  # 新增节点
     "Alta:ListFilesByExt": ListFilesByExt,  # 新增节点
