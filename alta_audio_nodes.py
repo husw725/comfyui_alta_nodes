@@ -99,7 +99,7 @@ class PyannoteSpeakerDiarizationNode:
         print(f"[Pyannote] Loading model from cache_dir={cache_dir}")
         pipeline = Pipeline.from_pretrained(
             "pyannote/speaker-diarization",
-            use_auth_token=hf_token,
+            token=hf_token,
             cache_dir=cache_dir
         )
 
