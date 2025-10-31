@@ -91,4 +91,14 @@ except ImportError as e:
 except Exception as e:
     logger.error("Error importing alta_lipsync_node", e)
 
+
+try:
+    from .alta_audio_nodes import NODE_CLASS_MAPPINGS as audio_mapping
+    NODE_CLASS_MAPPINGS.update(audio_mapping)
+    logger.info("alta_audio_nodes loaded")
+except ImportError as e:
+    logger.error("Error importing alta_audio_nodes",e)
+except Exception as e:
+    logger.error("Error importing alta_audio_nodes", e)
+
 logger.warning("================= ALTA NODES LOADED ================")

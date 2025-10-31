@@ -1,5 +1,6 @@
-volcengine
 openai
 ultralytics
 syncsdk
 python-dotenv
+pyannote.audio
+volcengine
