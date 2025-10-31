@@ -1,8 +1,3 @@
-import os
-import tempfile
-from typing import List, Tuple
-from pathlib import Path
-from pyannote.audio import Pipeline
 
 import numpy as np
 import soundfile as sf
@@ -99,7 +94,7 @@ class PyannoteSpeakerDiarizationNode:
         print(f"[Pyannote] Loading model from cache_dir={cache_dir}")
         pipeline = Pipeline.from_pretrained(
             "pyannote/speaker-diarization",
-            token=hf_token,
+            use_auth_token=hf_token,
             cache_dir=cache_dir
         )
 
