@@ -64,9 +64,40 @@ class MultiRouteNode:
         return (in1, in2, in3, in4)
 
 
+class ListLengthNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"list_input": ("LIST",)}}
+    RETURN_TYPES = ("INT",)
+    RETURN_NAMES = ("length",)
+    FUNCTION = "get_length"
+    CATEGORY = "alta/Utils/List"
+
+    def get_length(self, list_input):
+        return (len(list_input),)
+
+class ListElementNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"list_input": ("LIST",), "index": ("INT", {"default": 0})}}
+    RETURN_TYPES = ("ANY",)
+    RETURN_NAMES = ("element",)
+    FUNCTION = "get_element"
+    CATEGORY = "alta/Utils/List"
+
+    def get_element(self, list_input, index):
+        if not list_input:
+            return (None,)
+        index = max(0, min(index, len(list_input)-1))
+        return (list_input[index],)
+
+
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
+    "Alta:ListLength(Util)": ListLengthNode,
+    "Alta:ListElement(Util)": ListElementNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
