@@ -124,7 +124,7 @@ class PyannoteSpeakerDiarizationNode:
             os.remove(audio_file)
 
         return (result,)
-
+    
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {

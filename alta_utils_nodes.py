@@ -92,12 +92,62 @@ class ListElementNode:
         return (list_input[index],)
 
 
+import json
+from typing import Any, List
+
+class JSONKeyExtractor:
+    """
+    Extracts one or more keys from a JSON string.
+    Example:
+        Input JSON: {"start": 85.15, "end": 85.17, "speaker": "speaker_SPEAKER_03"}
+        Input keys: ["start", "speaker"]
+        Output: [85.15, "speaker_SPEAKER_03"]
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "json_str": ("STRING", {"multiline": False}),
+                "keys": ("STRING", {"multiline": False, "default": "start"}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("result",)
+    FUNCTION = "extract_values"
+    CATEGORY = "Alta/Utils/Json"
+
+    def extract_values(self, json_str: str, keys: str) -> tuple[str]:
+        try:
+            # Parse JSON
+            data = json.loads(json_str)
+
+            # Convert keys input to list (comma or JSON-style array supported)
+            if keys.strip().startswith("["):
+                keys_list = json.loads(keys)
+            else:
+                keys_list = [k.strip() for k in keys.split(",") if k.strip()]
+
+            # Extract values
+            values: List[Any] = [data.get(k, None) for k in keys_list]
+
+            # If only one key, return single value; otherwise list
+            if len(values) == 1:
+                return (json.dumps(values[0]),)
+            else:
+                return (json.dumps(values),)
+
+        except Exception as e:
+            return (f"Error: {e}",)
+
 
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
     "Alta:ListLength(Util)": ListLengthNode,
     "Alta:ListElement(Util)": ListElementNode,
+    "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
