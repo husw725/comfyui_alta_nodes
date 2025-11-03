@@ -97,33 +97,39 @@ from typing import Any, List
 
 class JSONKeyExtractor:
     """
-    Extracts one or more keys from a JSON string.
+    Extract up to 5 keys from a JSON string.
+    Each key becomes a separate output port.
+    If key is missing, output None.
     Example:
-        Input JSON: {"start": 85.15, "end": 85.17, "speaker": "speaker_SPEAKER_03"}
-        Input keys: ["start", "speaker"]
-        Output: [85.15, "speaker_SPEAKER_03"]
+        json_str = {"start":85.15,"end":85.17,"speaker":"speaker_SPEAKER_03"}
+        keys = ["start","end","speaker"]
+        outputs:
+            out1 -> 85.15
+            out2 -> 85.17
+            out3 -> "speaker_SPEAKER_03"
+            out4 -> None
+            out5 -> None
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "json_str": ("STRING", {"multiline": False}),
-                "keys": ("STRING", {"multiline": False, "default": "start"}),
-            },
+                "json_str": ("STRING", {"multiline": False, "default": '{"start":85.15,"end":85.17,"speaker":"speaker_SPEAKER_03"}'}),
+                "keys": ("STRING", {"multiline": False, "default": "start,end,speaker"}),
+            }
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("result",)
+    RETURN_TYPES = ("ANY", "ANY", "ANY", "ANY", "ANY")
+    RETURN_NAMES = ("out1", "out2", "out3", "out4", "out5")
     FUNCTION = "extract_values"
-    CATEGORY = "Alta/Utils/Json"
+    CATEGORY = "JSON Tools"
 
-    def extract_values(self, json_str: str, keys: str) -> tuple[str]:
+    def extract_values(self, json_str: str, keys: str):
         try:
-            # Parse JSON
             data = json.loads(json_str)
 
-            # Convert keys input to list (comma or JSON-style array supported)
+            # Parse keys input
             if keys.strip().startswith("["):
                 keys_list = json.loads(keys)
             else:
@@ -132,14 +138,19 @@ class JSONKeyExtractor:
             # Extract values
             values: List[Any] = [data.get(k, None) for k in keys_list]
 
-            # If only one key, return single value; otherwise list
-            if len(values) == 1:
-                return (json.dumps(values[0]),)
-            else:
-                return (json.dumps(values),)
+            # Pad up to 5 outputs with None
+            while len(values) < 5:
+                values.append(None)
+
+            # Trim if more than 5
+            if len(values) > 5:
+                values = values[:5]
+
+            return tuple(values)
 
         except Exception as e:
-            return (f"Error: {e}",)
+            return (f"Error: {e}", None, None, None, None)
+
 
 
 NODE_CLASS_MAPPINGS = {
