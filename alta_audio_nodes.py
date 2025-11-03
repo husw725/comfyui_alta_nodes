@@ -1,6 +1,9 @@
 
 import numpy as np
 import soundfile as sf
+import torchaudio
+import os,io,av
+from typing import Tuple
 
 class PyannoteSpeakerDiarizationNode:
     """ComfyUI 节点：基于 pyannote/speaker-diarization-community-1 的说话人分离"""
@@ -124,11 +127,132 @@ class PyannoteSpeakerDiarizationNode:
             os.remove(audio_file)
 
         return (result,)
-    
+
+
+
+
+
+import folder_paths
+from typing import Any, Dict, List
+
+
+class SaveAudioToPath:
+    """
+    ComfyUI node to save AUDIO to disk.
+    Supports mono/stereo/multi-channel audio.
+    Supports formats: flac, mp3, opus, wav
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "audio": ("AUDIO",),
+                "output_path": ("STRING", {"multiline": False}),
+                "format": (["flac", "mp3", "opus", "wav"], {"default": "flac"}),
+                "quality": (["64k", "96k", "128k", "192k", "320k", "V0"], {"default": "128k"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("saved_path",)
+    FUNCTION = "save_audio"
+    CATEGORY = "Audio"
+
+    def save_audio(
+        self,
+        audio: Dict[str, Any],
+        output_path: str,
+        format: str = "flac",
+        quality: str = "128k",
+    ) -> Tuple[str]:
+        try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+            waveform: torch.Tensor = audio["waveform"].cpu()
+            sample_rate: int = audio["sample_rate"]
+
+            # Opus requires specific sample rates
+            OPUS_RATES = [8000, 12000, 16000, 24000, 48000]
+            if format == "opus":
+                if sample_rate > 48000 or sample_rate not in OPUS_RATES:
+                    sample_rate = min([r for r in OPUS_RATES if r >= min(sample_rate, 48000)])
+                    waveform = torch.nn.functional.interpolate(
+                        waveform.unsqueeze(0), size=int(sample_rate*waveform.shape[-1]/audio["sample_rate"]), mode='linear'
+                    ).squeeze(0)
+
+            results = []
+            for batch_number, wave in enumerate(waveform):
+                # Handle batch filename
+                path = output_path
+                if "%batch_num%" in output_path:
+                    path = output_path.replace("%batch_num%", str(batch_number))
+                elif waveform.shape[0] > 1:
+                    name, ext = os.path.splitext(output_path)
+                    path = f"{name}_{batch_number}{ext}"
+
+                # Interleave channels for PyAV
+                channels, samples = wave.shape
+                wave_np = wave.numpy().astype(np.float32)
+
+                if channels == 1:
+                    interleaved = wave_np[0]
+                    layout = "mono"
+                else:
+                    interleaved = np.empty((samples * channels,), dtype=np.float32)
+                    for c in range(channels):
+                        interleaved[c::channels] = wave_np[c]
+                    layout = "stereo" if channels == 2 else f"{channels}.0"
+
+                # Write using PyAV
+                output_buffer = io.BytesIO()
+                container = av.open(output_buffer, mode="w", format=format)
+
+                # Codec selection
+                if format == "opus":
+                    stream = container.add_stream("libopus", rate=sample_rate, layout=layout)
+                    bitrate_map = {"64k": 64000, "96k": 96000, "128k": 128000, "192k": 192000, "320k": 320000}
+                    stream.bit_rate = bitrate_map.get(quality, 128000)
+                elif format == "mp3":
+                    stream = container.add_stream("libmp3lame", rate=sample_rate, layout=layout)
+                    if quality == "V0":
+                        stream.codec_context.qscale = 1
+                    else:
+                        bitrate_map = {"128k": 128000, "320k": 320000}
+                        stream.bit_rate = bitrate_map.get(quality, 128000)
+                elif format == "wav":
+                    stream = container.add_stream("pcm_s16le", rate=sample_rate, layout=layout)
+                else:
+                    stream = container.add_stream("flac", rate=sample_rate, layout=layout)
+
+                # Create frame
+                frame = av.AudioFrame.from_ndarray(interleaved.reshape(1, -1), format="flt", layout=layout)
+                frame.sample_rate = sample_rate
+                frame.pts = 0
+
+                # Encode and mux
+                container.mux(stream.encode(frame))
+                container.mux(stream.encode(None))
+                container.close()
+
+                # Save to disk
+                output_buffer.seek(0)
+                with open(path, "wb") as f:
+                    f.write(output_buffer.getbuffer())
+
+                results.append(path)
+
+            return (results[0] if len(results) == 1 else json.dumps(results),)
+
+        except Exception as e:
+            return (f"Error saving audio: {e}",)
+
+
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
-    "Alta:SpeakerDiarization": PyannoteSpeakerDiarizationNode
+    "Alta:SpeakerDiarization": PyannoteSpeakerDiarizationNode,
+    "Alta:SaveAudioToPath": SaveAudioToPath,
 }
 
 # 可选显示名映射
