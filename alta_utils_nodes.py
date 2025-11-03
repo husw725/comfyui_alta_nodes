@@ -44,29 +44,45 @@ class DynamicTupleNode:
 
 class MultiRouteNode:
     """
-    通用多路由节点，兼容 AUDIO、VIDEO、STRING、INT 等类型
+    通用多路由节点：
+    - 必填 1 个 ANY 输入
+    - 可选输入 AUDIO / VIDEO / IMAGE / LATENT / TENSOR / ANY
     """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "in1": ("ANY", "AUDIO", "VIDEO"),
+                "any_in": ("ANY",),  # 必填 ANY
             },
             "optional": {
-                "in2": ("ANY", "AUDIO", "VIDEO"),
-                "in3": ("ANY", "AUDIO", "VIDEO"),
-                "in4": ("ANY", "AUDIO", "VIDEO"),
+                "audio_in": ("AUDIO",),
+                "video_in": ("VIDEO",),
+                "image_in": ("IMAGE",),
+                "latent_in": ("LATENT",),
+                "tensor_in": ("TENSOR",),
+                "any2": ("ANY",),
+                "any3": ("ANY",),
             }
         }
 
-    RETURN_TYPES = ("ANY", "ANY", "ANY", "ANY")
-    RETURN_NAMES = ("out1", "out2", "out3", "out4")
+    RETURN_TYPES = ("ANY", "AUDIO", "VIDEO", "IMAGE", "LATENT", "TENSOR", "ANY", "ANY")
+    RETURN_NAMES = ("any_out", "audio_out", "video_out", "image_out", "latent_out", "tensor_out", "any_out2", "any_out3")
     FUNCTION = "route"
     CATEGORY = "Utils/Routing"
-    DESCRIPTION = "通用多路由节点，输入和输出可连接 AUDIO/VIDEO/STRING/INT 等"
+    DESCRIPTION = "通用多路由节点，支持 AUDIO/VIDEO/IMAGE/LATENT/TENSOR/ANY 类型"
 
-    def route(self, in1: Any, in2: Any = None, in3: Any = None, in4: Any = None) -> Tuple[Any, Any, Any, Any]:
-        return (in1, in2, in3, in4)
+    def route(self,
+              any_in,
+              audio_in=None,
+              video_in=None,
+              image_in=None,
+              latent_in=None,
+              tensor_in=None,
+              any2=None,
+              any3=None) -> Tuple[Any, Any, Any, Any, Any, Any, Any, Any]:
+        # 原样返回输入
+        return (any_in, audio_in, video_in, image_in, latent_in, tensor_in, any2, any3)
+
 
 
 class ListLengthNode:
