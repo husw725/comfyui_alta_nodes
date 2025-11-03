@@ -179,6 +179,36 @@ class Int2Str:
             return (f"Error: {e}",)
 
 
+class StrToNum:
+    """
+    ComfyUI node to convert a string to int and float.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "value": ("STRING",),  # input string
+            }
+        }
+
+    RETURN_TYPES = ("FLOAT", "INT")
+    RETURN_NAMES = ("float_value", "int_value")
+    FUNCTION = "convert"
+    CATEGORY = "Alta/Utils"
+    DESCRIPTION = "Convert string to float and int."
+
+    def convert(self, value: str) -> Tuple[float, int]:
+        try:
+            f = float(value)
+            i = int(f)
+            return (f, i)
+        except Exception as e:
+            # Return 0 as default if conversion fails
+            print(f"StrToNum conversion error: {e}")
+            return (0.0, 0)
+
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
@@ -186,6 +216,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:ListElement(Util)": ListElementNode,
     "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
     "Alta:Int2Str(Util)": Int2Str,
+    "Alta:StrToNum(Util)": StrToNum,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
