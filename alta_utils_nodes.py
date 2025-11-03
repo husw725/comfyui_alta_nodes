@@ -207,6 +207,58 @@ class StrToNum:
             # Return 0 as default if conversion fails
             print(f"StrToNum conversion error: {e}")
             return (0.0, 0)
+        
+
+class AddNode:
+    """
+    ComfyUI node to add two numbers.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "a": ("FLOAT",),
+                "b": ("FLOAT",),
+            }
+        }
+
+    RETURN_TYPES = ("FLOAT",)
+    RETURN_NAMES = ("sum",)
+    FUNCTION = "compute"
+    CATEGORY = "Alta/Math"
+    DESCRIPTION = "Add two numbers."
+
+    def compute(self, a: float, b: float) -> Tuple[float]:
+        return (a + b,)
+
+
+# -------------------------
+# Subtraction Node
+# -------------------------
+class SubNode:
+    """
+    ComfyUI node to subtract two numbers.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "a": ("FLOAT",),
+                "b": ("FLOAT",),
+            }
+        }
+
+    RETURN_TYPES = ("FLOAT",)
+    RETURN_NAMES = ("difference",)
+    FUNCTION = "compute"
+    CATEGORY = "Alta/Math"
+    DESCRIPTION = "Subtract b from a."
+
+    def compute(self, a: float, b: float) -> Tuple[float]:
+        return (a - b,)
+
 
 
 NODE_CLASS_MAPPINGS = {
@@ -217,6 +269,8 @@ NODE_CLASS_MAPPINGS = {
     "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
     "Alta:Int2Str(Util)": Int2Str,
     "Alta:StrToNum(Util)": StrToNum,
+    "Alta:Add(Math)": AddNode,
+    "Alta:Sub(Math)": SubNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
