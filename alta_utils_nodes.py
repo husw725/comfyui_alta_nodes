@@ -151,6 +151,32 @@ class JSONKeyExtractor:
         except Exception as e:
             return (f"Error: {e}", None, None, None, None)
 
+from typing import Any, List, Tuple
+
+class Int2Str:
+    """
+    ComfyUI node to convert integer(s) to string(s)
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "value": ("INT",),       # single int input
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("str_value",)
+    FUNCTION = "convert"
+    CATEGORY = "Alta/Utils"
+    DESCRIPTION = "Convert integer to string."
+
+    def convert(self, value: int) -> Tuple[str]:
+        try:
+            return (str(value),)
+        except Exception as e:
+            return (f"Error: {e}",)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -158,7 +184,8 @@ NODE_CLASS_MAPPINGS = {
     "Alta:MultiRoute": MultiRouteNode,
     "Alta:ListLength(Util)": ListLengthNode,
     "Alta:ListElement(Util)": ListElementNode,
-    "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor
+    "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
+    "Alta:Int2Str(Util)": Int2Str,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
