@@ -1,4 +1,8 @@
 from typing import Any, Tuple
+import os
+
+
+
 class DynamicTupleNode:
     """
     动态输入组合节点
@@ -260,6 +264,24 @@ class SubNode:
         return (a - b,)
 
 
+class DeleteFile:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"path": ("STRING",)}}
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("deleted_path",)
+    FUNCTION = "delete_file"
+    CATEGORY = "Utils"
+    DESCRIPTION = "Delete file at given path"
+
+    def delete_file(self, path: str) -> Tuple[str]:
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+            return (path,)
+        except Exception as e:
+            return (f"Error deleting file: {e}",)
 
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
@@ -267,8 +289,9 @@ NODE_CLASS_MAPPINGS = {
     "Alta:ListLength(Util)": ListLengthNode,
     "Alta:ListElement(Util)": ListElementNode,
     "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
-    "Alta:Int2Str(Util)": Int2Str,
-    "Alta:StrToNum(Util)": StrToNum,
+    "Alta:DeleteFile(Util)": DeleteFile,
+    "Alta:Int2Str(Math)": Int2Str,
+    "Alta:StrToNum(Math)": StrToNum,
     "Alta:Add(Math)": AddNode,
     "Alta:Sub(Math)": SubNode,
 }
