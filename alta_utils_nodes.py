@@ -123,7 +123,7 @@ class JSONKeyExtractor:
     RETURN_TYPES = ("ANY", "ANY", "ANY", "ANY", "ANY")
     RETURN_NAMES = ("out1", "out2", "out3", "out4", "out5")
     FUNCTION = "extract_values"
-    CATEGORY = "JSON Tools"
+    CATEGORY = "alta/Utils/JSON Tools"
 
     def extract_values(self, json_str: str, keys: str):
         try:
