@@ -44,19 +44,18 @@ class DynamicTupleNode:
 
 class MultiRouteNode:
     """
-    多路路由节点：第1个输入必填，其余输入可选。
-    支持四个输出，未传入的输入输出为 None。
+    通用多路由节点，兼容 AUDIO、VIDEO、STRING、INT 等类型
     """
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {         # 必填输入
-                "in1": ("ANY",),
+            "required": {
+                "in1": ("ANY", "AUDIO", "VIDEO"),
             },
-            "optional": {         # 可选输入
-                "in2": ("ANY",),
-                "in3": ("ANY",),
-                "in4": ("ANY",),
+            "optional": {
+                "in2": ("ANY", "AUDIO", "VIDEO"),
+                "in3": ("ANY", "AUDIO", "VIDEO"),
+                "in4": ("ANY", "AUDIO", "VIDEO"),
             }
         }
 
@@ -64,10 +63,9 @@ class MultiRouteNode:
     RETURN_NAMES = ("out1", "out2", "out3", "out4")
     FUNCTION = "route"
     CATEGORY = "Utils/Routing"
-    DESCRIPTION = "将多个输入路由到对应输出，未提供输入输出为 None"
+    DESCRIPTION = "通用多路由节点，输入和输出可连接 AUDIO/VIDEO/STRING/INT 等"
 
     def route(self, in1: Any, in2: Any = None, in3: Any = None, in4: Any = None) -> Tuple[Any, Any, Any, Any]:
-        # 确保返回四个值
         return (in1, in2, in3, in4)
 
 
