@@ -324,6 +324,42 @@ class SubNode:
     def compute(self, a: float, b: float) -> Tuple[float]:
         return (a - b,)
 
+import shutil
+
+class MoveFileNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "src_path": ("STRING", {"multiline": False, "default": ""}),
+                "dst_path": ("STRING", {"multiline": False, "default": ""}),
+                "overwrite": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    # 返回目标文件路径
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("moved_path",)
+    FUNCTION = "move_file"
+    CATEGORY = "Alta/File"
+    DESCRIPTION = "Move a file from src_path to dst_path and return the destination path."
+
+    def move_file(self, src_path, dst_path, overwrite):
+        if not os.path.exists(src_path):
+            raise FileNotFoundError(f"Source file not found: {src_path}")
+
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+
+        if os.path.exists(dst_path):
+            if overwrite:
+                os.remove(dst_path)
+            else:
+                raise FileExistsError(f"File already exists: {dst_path}")
+
+        shutil.move(src_path, dst_path)
+        print(f"Moved {src_path} -> {dst_path}")
+        return (dst_path,)
+    
 
 
 class DeleteFile:
@@ -352,6 +388,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:ListElement(Util)": ListElementNode,
     "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
     "Alta:DeleteFile(Util)": DeleteFile,
+    "Alta:MoveFile(File)": MoveFileNode,
     "Alta:Int2Str(Math)": Int2Str,
     "Alta:StrToNum(Math)": StrToNum,
     "Alta:Add(Math)": AddNode,
