@@ -253,10 +253,54 @@ class AddNode:
     def compute(self, a: float, b: float) -> Tuple[float]:
         return (a + b,)
 
+class AddIntNode:
+    """
+    ComfyUI node to add two numbers.
+    """
 
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "a": ("Int",),
+                "b": ("FLOAT",),
+            }
+        }
+
+    RETURN_TYPES = ("Int",)
+    RETURN_NAMES = ("sum",)
+    FUNCTION = "compute"
+    CATEGORY = "Alta/Math"
+    DESCRIPTION = "Add two numbers."
+
+    def compute(self, a: int, b: int) -> Tuple[int]:
+        return (a + b,)
 # -------------------------
 # Subtraction Node
 # -------------------------
+class SubIntNode:
+    """
+    ComfyUI node to subtract two numbers.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "a": ("Int",),
+                "b": ("Int",),
+            }
+        }
+
+    RETURN_TYPES = ("Int",)
+    RETURN_NAMES = ("difference",)
+    FUNCTION = "compute"
+    CATEGORY = "Alta/Math"
+    DESCRIPTION = "Subtract b from a."
+
+    def compute(self, a: int, b: int) -> Tuple[int]:
+        return (a - b,)
+
 class SubNode:
     """
     ComfyUI node to subtract two numbers.
@@ -266,12 +310,12 @@ class SubNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("FLOAT",),
-                "b": ("FLOAT",),
+                "a": ("Float",),
+                "b": ("Float",),
             }
         }
 
-    RETURN_TYPES = ("FLOAT",)
+    RETURN_TYPES = ("Float",)
     RETURN_NAMES = ("difference",)
     FUNCTION = "compute"
     CATEGORY = "Alta/Math"
@@ -279,6 +323,7 @@ class SubNode:
 
     def compute(self, a: float, b: float) -> Tuple[float]:
         return (a - b,)
+
 
 
 class DeleteFile:
