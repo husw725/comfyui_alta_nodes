@@ -355,7 +355,9 @@ NODE_CLASS_MAPPINGS = {
     "Alta:Int2Str(Math)": Int2Str,
     "Alta:StrToNum(Math)": StrToNum,
     "Alta:Add(Math)": AddNode,
+    "Alta:AddInt(Math)": AddIntNode,
     "Alta:Sub(Math)": SubNode,
+    "Alta:SubInt(Math)": SubIntNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
