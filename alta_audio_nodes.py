@@ -248,11 +248,135 @@ class SaveAudioToPath:
             return (f"Error saving audio: {e}",)
 
 
+import os
+import torch
+import torchaudio
+
+class LoadAudioByPath:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "path": ("STRING", {"default": "", "multiline": False}),
+            }
+        }
+
+    RETURN_TYPES = ("AUDIO", "FLOAT",)
+    RETURN_NAMES = ("audio_tensor", "sample_rate",)
+    FUNCTION = "load_audio"
+    CATEGORY = "Alta/Audio"
+    DESCRIPTION = "Load an audio file from a given path."
+
+    def load_audio(self, path):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Audio file not found: {path}")
+
+        # 加载音频
+        waveform, sample_rate = torchaudio.load(path)
+
+        # 如果是立体声，可选择转换为单声道（可按需注释掉）
+        if waveform.shape[0] > 1:
+            waveform = torch.mean(waveform, dim=0, keepdim=True)
+
+        print(f"Loaded audio: {path} (sr={sample_rate}, len={waveform.shape[-1]})")
+
+        return (waveform, float(sample_rate))
+
+import torch
+
+# 全局缓存字典
+_AUDIO_CACHE = {}
+
+# -------------------------
+# Store Node
+# -------------------------
+class StoreAudioInMemory:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "name": ("STRING", {"default": "default_audio"}),
+                "audio": ("AUDIO",),
+                "sample_rate": ("FLOAT", {"default": 44100}),
+            }
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "store"
+    CATEGORY = "Alta/Audio/Memory"
+    DESCRIPTION = "Store audio in memory for later retrieval."
+
+    def store(self, name, audio, sample_rate):
+        _AUDIO_CACHE[name] = (audio.clone(), sample_rate)
+        print(f"[AudioCache] Stored '{name}' (len={audio.shape[-1]}, sr={sample_rate})")
+        return ()
+
+
+# -------------------------
+# Load Node
+# -------------------------
+class LoadAudioFromMemory:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "name": ("STRING", {"default": "default_audio"}),
+            }
+        }
+
+    RETURN_TYPES = ("AUDIO", "FLOAT", "BOOLEAN",)
+    RETURN_NAMES = ("audio", "sample_rate", "exist",)
+    FUNCTION = "load"
+    CATEGORY = "Alta/Audio/Memory"
+    DESCRIPTION = "Load audio from memory by name. Returns exist=False if not found."
+
+    def load(self, name):
+        if name not in _AUDIO_CACHE:
+            print(f"[AudioCache] '{name}' not found.")
+            # 返回空的 tensor + 默认采样率 + exist=False
+            empty_audio = torch.zeros((1, 0))
+            return (empty_audio, 0.0, False)
+
+        audio, sr = _AUDIO_CACHE[name]
+        print(f"[AudioCache] Loaded '{name}' (len={audio.shape[-1]}, sr={sr})")
+        return (audio.clone(), float(sr), True)
+
+
+# -------------------------
+# Delete Node
+# -------------------------
+class DeleteAudioFromMemory:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "name": ("STRING", {"default": "default_audio"}),
+            }
+        }
+
+    RETURN_TYPES = ("BOOLEAN",)
+    RETURN_NAMES = ("deleted",)
+    FUNCTION = "delete"
+    CATEGORY = "Alta/Audio/Memory"
+    DESCRIPTION = "Delete audio from memory cache and return whether it existed."
+
+    def delete(self, name):
+        if name in _AUDIO_CACHE:
+            del _AUDIO_CACHE[name]
+            print(f"[AudioCache] Deleted '{name}'")
+            return (True,)
+        else:
+            print(f"[AudioCache] '{name}' not found.")
+            return (False,)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
     "Alta:SpeakerDiarization": PyannoteSpeakerDiarizationNode,
     "Alta:SaveAudioToPath": SaveAudioToPath,
+    "Alta:LoadAudioByPath": LoadAudioByPath,
+    "Alta:StoreAudioInMemory": StoreAudioInMemory,
+    "Alta:LoadAudioFromMemory": LoadAudioFromMemory,
+    "Alta:DeleteAudioFromMemory": DeleteAudioFromMemory,
 }
 
 # 可选显示名映射

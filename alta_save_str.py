@@ -108,6 +108,47 @@ class WriteStringToFile:
         return (file_path,)
 
 
+class WriteStringToFile:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # 要写入的字符串
+                "content": ("STRING", {"multiline": True, "default": ""}),
+                # 文件名（不带扩展名）
+                "filename": ("STRING", {"default": "output_file"}),
+                # 文件所在目录
+                "folder": ("STRING", {"default": "outputs"}),
+                # 扩展名
+                "extension": ("STRING", {"default": "txt"}),
+                # 是否追加
+                "append": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("file_path",)
+    FUNCTION = "write_file"
+    CATEGORY = "Alta"
+    DESCRIPTION = "Write a string to a file, optionally appending, and return the file path."
+
+    def write_file(self, content, filename, folder, extension, append):
+        # 确保目录存在
+        os.makedirs(folder, exist_ok=True)
+
+        # 生成文件路径
+        file_path = os.path.join(folder, f"{filename}.{extension}")
+
+        # 写入模式（覆盖或追加）
+        mode = "a" if append else "w"
+
+        # 写文件
+        with open(file_path, mode, encoding="utf-8") as f:
+            f.write(content)
+
+        print(f"[WriteStringToFile] Wrote to {file_path} (append={append})")
+        return (file_path,)
+
 class ReadStringFromFile:
     @classmethod
     def INPUT_TYPES(cls):
@@ -306,6 +347,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:GetFileFolder": GetFileFolder,
     "Alta:GetFilenameWithExt": GetFilenameWithExt,
     "Alta:ReadStringFromFile": ReadStringFromFile,  # 新增节点
+    "Alta:writeStringToFile": WriteStringToFile,  # 新增节点
     "Alta:BuildFilePath": BuildFilePath,  # 新增节点
     "Alta:ListFilesByExt": ListFilesByExt,  # 新增节点
     "Alta:ListAllFiles": ListAllFiles  # 新增节点
