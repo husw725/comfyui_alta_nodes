@@ -262,12 +262,12 @@ class AddIntNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("Int",),
-                "b": ("Int",),
+                "a": ("INT",),
+                "b": ("INT",),
             }
         }
 
-    RETURN_TYPES = ("Int",)
+    RETURN_TYPES = ("INT",)
     RETURN_NAMES = ("sum",)
     FUNCTION = "compute"
     CATEGORY = "Alta/Math"
@@ -287,12 +287,12 @@ class SubIntNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("Int",),
-                "b": ("Int",),
+                "a": ("INT",),
+                "b": ("INT",),
             }
         }
 
-    RETURN_TYPES = ("Int",)
+    RETURN_TYPES = ("INT",)
     RETURN_NAMES = ("difference",)
     FUNCTION = "compute"
     CATEGORY = "Alta/Math"
