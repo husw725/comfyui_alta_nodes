@@ -263,7 +263,7 @@ class AddIntNode:
         return {
             "required": {
                 "a": ("Int",),
-                "b": ("FLOAT",),
+                "b": ("Int",),
             }
         }
 
