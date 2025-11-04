@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple,Union
 import os
 
 
@@ -229,45 +229,47 @@ class StrToNum:
             print(f"StrToNum conversion error: {e}")
             return (0.0, 0)
         
-
 class AddNode:
     """
     ComfyUI node to add two numbers.
+    Supports int + int = int, else float.
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("FLOAT",),
-                "b": ("FLOAT",),
+                "a": (["INT", "FLOAT"],),
+                "b": (["INT", "FLOAT"],),
             }
         }
 
-    RETURN_TYPES = ("FLOAT",)
+    RETURN_TYPES = ("FLOAT",)  # 固定返回类型，ComfyUI 显示用
     RETURN_NAMES = ("sum",)
     FUNCTION = "compute"
     CATEGORY = "Alta/Math"
-    DESCRIPTION = "Add two numbers."
+    DESCRIPTION = "Add two numbers (int + int = int, else float)."
 
-    def compute(self, a: float, b: float) -> Tuple[float]:
-        return (a + b,)
+    def compute(self, a: Union[int, float], b: Union[int, float]) -> Tuple[Union[int, float]]:
+        result = a + b
+        # 如果两者都是 int，返回 int，否则 float
+        if isinstance(a, int) and isinstance(b, int):
+            return (int(result),)
+        return (float(result),)
 
 
-# -------------------------
-# Subtraction Node
-# -------------------------
 class SubNode:
     """
     ComfyUI node to subtract two numbers.
+    Supports int - int = int, else float.
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("FLOAT",),
-                "b": ("FLOAT",),
+                "a": (["INT", "FLOAT"],),
+                "b": (["INT", "FLOAT"],),
             }
         }
 
@@ -275,11 +277,13 @@ class SubNode:
     RETURN_NAMES = ("difference",)
     FUNCTION = "compute"
     CATEGORY = "Alta/Math"
-    DESCRIPTION = "Subtract b from a."
+    DESCRIPTION = "Subtract b from a (int - int = int, else float)."
 
-    def compute(self, a: float, b: float) -> Tuple[float]:
-        return (a - b,)
-
+    def compute(self, a: Union[int, float], b: Union[int, float]) -> Tuple[Union[int, float]]:
+        result = a - b
+        if isinstance(a, int) and isinstance(b, int):
+            return (int(result),)
+        return (float(result),)
 
 class DeleteFile:
     @classmethod
