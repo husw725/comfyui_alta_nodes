@@ -400,21 +400,19 @@ class RNNoiseDenoiseEnhancedNode:
     DESCRIPTION = "Use RNNoise + high/low pass filter + noise gate to clean up vocals."
 
     def denoise_enhanced(self, audio_waveform, sample_rate, highpass_cutoff, lowpass_cutoff, noise_gate_threshold):
-        """
-        audio_waveform: numpy array float32 [-1,1]
-        sample_rate: int
-        highpass_cutoff, lowpass_cutoff: Hz
-        noise_gate_threshold: dB
-        """
-        # 单声道
-        if audio_waveform.ndim > 1:
-            audio_waveform = np.mean(audio_waveform, axis=1).astype(np.float32)
+        # ComfyUI 的 AUDIO 通常是 dict，取 samples
+        if isinstance(audio_waveform, dict) and "samples" in audio_waveform:
+            audio_data = np.array(audio_waveform["samples"], dtype=np.float32)
         else:
-            audio_waveform = audio_waveform.astype(np.float32)
+            audio_data = np.array(audio_waveform, dtype=np.float32)
+
+        # 单声道
+        if audio_data.ndim > 1:
+            audio_data = np.mean(audio_data, axis=1)
 
         # 1️⃣ RNNoise 去噪
         denoiser = pyrnnoise.RNNoise()
-        audio_denoised = denoiser.filter(audio_waveform)
+        audio_denoised = denoiser.filter(audio_data)
 
         # 2️⃣ 高频 / 低频滤波（简单FFT滤波）
         fft = np.fft.rfft(audio_denoised)
