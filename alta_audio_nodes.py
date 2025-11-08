@@ -121,8 +121,8 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         params = {
             "segmentation": {
-                "min_duration_off": min_duration_off_label,   # silence threshold
-                "min_duration_on": min_duration_on_label      # minimum speech segment
+                "min_duration_off_label": min_duration_off_label,   # silence threshold
+                "min_duration_on_label": min_duration_on_label      # minimum speech segment
             },
             # optional clustering params
             "clustering": {
