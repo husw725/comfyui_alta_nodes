@@ -18,7 +18,7 @@ class PyannoteSpeakerDiarizationNode:
                 "audio": ("AUDIO",),
                 "audio_path": ("STRING", {"default": ""}),
                 "cache_dir": ("STRING", {"default": "./models/pyannote"}),
-                "use_gpu": ("BOOL", {"default": True}),
+                "use_gpu": ("BOOLEAN", {"default": True}),
             },
         }
 
