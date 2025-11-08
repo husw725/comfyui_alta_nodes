@@ -37,6 +37,9 @@ class PyannoteSpeakerDiarizationNode:
         audio_path: str = "",
         cache_dir: str = "./models/pyannote",
         use_gpu: bool = True,
+        step: float = 0.2,
+        min_duration_on_label: float = 0.6,
+        min_duration_off_label: float = 0.3,
     ):
         import os
         import tempfile
@@ -113,7 +116,7 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         print(f"[Pyannote 4.1] Running diarization on {audio_file}")
         with ProgressHook() as hook:
-            output = pipeline(audio_file, hook=hook,min_duration_on_label=0.6,min_duration_off_label=0.3,step=0.2)
+            output = pipeline(audio_file, hook=hook,min_duration_on_label=min_duration_on_label,min_duration_off_label=min_duration_off_label,step=step)
 
         result = []
         for turn, speaker in output.speaker_diarization:
