@@ -19,6 +19,9 @@ class PyannoteSpeakerDiarizationNode:
                 "audio_path": ("STRING", {"default": ""}),
                 "cache_dir": ("STRING", {"default": "./models/pyannote"}),
                 "use_gpu": ("BOOLEAN", {"default": True}),
+                "step": ("FLOAT", {"default": 0.2, "tooltip": "The step size (in seconds) for processing the audio."}),
+                "min_duration_on_label": ("FLOAT", {"default": 0.6, "tooltip": "The minimum duration of a speech turn to be considered as a label."}),
+                "min_duration_off_label": ("FLOAT", {"default": 0.3, "tooltip": "The minimum duration of silence to consider the speaker has changed."}),
             },
         }
 
@@ -110,7 +113,7 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         print(f"[Pyannote 4.1] Running diarization on {audio_file}")
         with ProgressHook() as hook:
-            output = pipeline(audio_file, hook=hook,min_duration_on_label=0.5,min_duration_off_label=0.3)
+            output = pipeline(audio_file, hook=hook,min_duration_on_label=0.6,min_duration_off_label=0.3,step=0.2)
 
         result = []
         for turn, speaker in output.speaker_diarization:
@@ -128,11 +131,6 @@ class PyannoteSpeakerDiarizationNode:
 
         return (result,)
 
-
-
-
-
-import folder_paths
 from typing import Any, Dict, List
 
 
