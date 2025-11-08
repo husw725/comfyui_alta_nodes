@@ -101,12 +101,13 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         # Only set min_duration_off, other parameters stay default
         # --------------------------
-        params = {
-            "segmentation": {
-                "min_duration_off": min_duration_off_label,
-            }
-        }
-        pipeline.instantiate(params)
+        # params = {
+        #     "segmentation": {
+        #         "min_duration_off": min_duration_off_label,
+        #     }
+        # }
+        # pipeline.instantiate(params)
+        pipeline.segmentation.min_duration_off = min_duration_off_label
 
         # --------------------------
         # Run diarization
