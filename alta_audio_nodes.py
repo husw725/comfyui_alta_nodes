@@ -25,7 +25,7 @@ class PyannoteSpeakerDiarizationNode:
                 "min_speakers": ("INT", {"default": 1}),
                 "max_speakers": ("INT", {"default": 10}),
                 "use_gpu": ("BOOLEAN", {"default": True}),
-                "min_duration_off_label": ("FLOAT", {"default": 0.5,
+                "min_duration_off_label": ("FLOAT", {"default": 0.8,
                                                      "tooltip": "Minimum silence duration to consider a speaker change. Shorter pauses are merged with previous speech."}),
             },
         }
@@ -42,10 +42,10 @@ class PyannoteSpeakerDiarizationNode:
         audio_path: str = "",
         # cache_dir: str = "./models/pyannote",
         num_speakers: int = 0,
-        min_speakers: int = 2,
+        min_speakers: int = 1,
         max_speakers: int = 10,
         use_gpu: bool = True,
-        min_duration_off_label: float = 0.3,
+        min_duration_off_label: float = 0.8,
     ):
         import os
         import tempfile
@@ -498,6 +498,8 @@ class DeleteAudioFromMemory:
 #         clean_tensor = torch.tensor(clean_waveform, dtype=torch.float32).unsqueeze(0)
 
 #         return ({"waveform": clean_tensor, "sample_rate": sample_rate},)
+
+
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
