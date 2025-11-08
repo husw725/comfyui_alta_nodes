@@ -20,7 +20,10 @@ class PyannoteSpeakerDiarizationNode:
             "optional": {
                 "audio": ("AUDIO",),
                 "audio_path": ("STRING", {"default": ""}),
-                "cache_dir": ("STRING", {"default": "./models/pyannote"}),
+                # "cache_dir": ("STRING", {"default": "./models/pyannote"}),
+                "num_speakers": ("INT", {"default": 0}),
+                "min_speakers": ("INT", {"default": 2}),
+                "max_speakers": ("INT", {"default": 10}),
                 "use_gpu": ("BOOLEAN", {"default": True}),
                 "min_duration_off_label": ("FLOAT", {"default": 0.3,
                                                      "tooltip": "Minimum silence duration to consider a speaker change. Shorter pauses are merged with previous speech."}),
@@ -37,7 +40,10 @@ class PyannoteSpeakerDiarizationNode:
         hf_token: str,
         audio=None,
         audio_path: str = "",
-        cache_dir: str = "./models/pyannote",
+        # cache_dir: str = "./models/pyannote",
+        num_speakers: int = 0,
+        min_speakers: int = 2,
+        max_speakers: int = 10,
         use_gpu: bool = True,
         min_duration_off_label: float = 0.3,
     ):
@@ -89,7 +95,6 @@ class PyannoteSpeakerDiarizationNode:
         pipeline = Pipeline.from_pretrained(
             "pyannote/speaker-diarization-community-1",
             token=hf_token,
-            cache_dir=cache_dir
         )
 
         if use_gpu and torch.cuda.is_available():
@@ -114,10 +119,14 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         print(f"[Pyannote] Running diarization on {audio_file}")
         with ProgressHook() as hook:
-            output = pipeline(
-                audio_file,
-                hook=hook
-            )
+            if num_speakers > 0:
+                output = pipeline(
+                    audio_file,
+                    hook=hook,
+                    num_speakers=num_speakers,
+                )
+            else:
+                output = pipeline(audio_file, hook=hook,min_speakers=min_speakers, max_speakers=max_speakers)
 
         # --------------------------
         # Convert output to list
