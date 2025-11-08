@@ -116,7 +116,7 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         print(f"[Pyannote 4.1] Running diarization on {audio_file}")
         with ProgressHook() as hook:
-            output = pipeline(audio_file, hook=hook,min_duration_on_label=min_duration_on_label,min_duration_off_label=min_duration_off_label,step=step)
+            output = pipeline(audio_file, hook=hook,min_duration_on=min_duration_on_label,min_duration_off=min_duration_off_label,step=step)
 
         result = []
         for turn, speaker in output.speaker_diarization:
