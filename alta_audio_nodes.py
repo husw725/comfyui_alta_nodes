@@ -369,6 +369,66 @@ class DeleteAudioFromMemory:
             print(f"[AudioCache] '{name}' not found.")
             return (False,)
 
+
+
+# RNNoiseDenoise_Enhanced.py
+# 放入 ComfyUI/custom_nodes/
+
+import numpy as np
+try:
+    import pyrnnoise
+except ImportError:
+    raise ImportError("请先安装 pyrnnoise: pip install pyrnnoise")
+
+class RNNoiseDenoiseEnhancedNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "audio_waveform": ("AUDIO",),
+                "sample_rate": ("INT", {"default": 44100}),
+                "highpass_cutoff": ("FLOAT", {"default": 80.0}),
+                "lowpass_cutoff": ("FLOAT", {"default": 9000.0}),
+                "noise_gate_threshold": ("FLOAT", {"default": -40.0})  # dB
+            }
+        }
+
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("clean_audio",)
+    FUNCTION = "denoise_enhanced"
+    CATEGORY = "Audio/Processing"
+    DESCRIPTION = "Use RNNoise + high/low pass filter + noise gate to clean up vocals."
+
+    def denoise_enhanced(self, audio_waveform, sample_rate, highpass_cutoff, lowpass_cutoff, noise_gate_threshold):
+        """
+        audio_waveform: numpy array float32 [-1,1]
+        sample_rate: int
+        highpass_cutoff, lowpass_cutoff: Hz
+        noise_gate_threshold: dB
+        """
+        # 单声道
+        if audio_waveform.ndim > 1:
+            audio_waveform = np.mean(audio_waveform, axis=1).astype(np.float32)
+        else:
+            audio_waveform = audio_waveform.astype(np.float32)
+
+        # 1️⃣ RNNoise 去噪
+        denoiser = pyrnnoise.RNNoise()
+        audio_denoised = denoiser.filter(audio_waveform)
+
+        # 2️⃣ 高频 / 低频滤波（简单FFT滤波）
+        fft = np.fft.rfft(audio_denoised)
+        freqs = np.fft.rfftfreq(len(audio_denoised), d=1/sample_rate)
+        fft[(freqs < highpass_cutoff) | (freqs > lowpass_cutoff)] = 0
+        audio_filtered = np.fft.irfft(fft)
+
+        # 3️⃣ 噪声门
+        threshold_amp = 10 ** (noise_gate_threshold / 20.0)
+        audio_filtered[np.abs(audio_filtered) < threshold_amp] = 0.0
+
+        return (audio_filtered,)
+
+
 # 注册节点
 NODE_CLASS_MAPPINGS = {
     "Alta:SpeakerDiarization": PyannoteSpeakerDiarizationNode,
@@ -377,6 +437,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:StoreAudioInMemory": StoreAudioInMemory,
     "Alta:LoadAudioFromMemory": LoadAudioFromMemory,
     "Alta:DeleteAudioFromMemory": DeleteAudioFromMemory,
+    "Alta:AudioDenoise": RNNoiseDenoiseEnhancedNode,
 }
 
 # 可选显示名映射
