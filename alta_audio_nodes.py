@@ -110,7 +110,7 @@ class PyannoteSpeakerDiarizationNode:
         # --------------------------
         print(f"[Pyannote 4.1] Running diarization on {audio_file}")
         with ProgressHook() as hook:
-            output = pipeline(audio_file, hook=hook)
+            output = pipeline(audio_file, hook=hook,min_duration_on_label=0.5,min_duration_off_label=0.3)
 
         result = []
         for turn, speaker in output.speaker_diarization:
@@ -374,58 +374,114 @@ class DeleteAudioFromMemory:
 # RNNoiseDenoise_Enhanced.py
 # 放入 ComfyUI/custom_nodes/
 
-import numpy as np
-try:
-    import pyrnnoise
-except ImportError:
-    raise ImportError("请先安装 pyrnnoise: pip install pyrnnoise")
+# import os
+# import tempfile
+# import numpy as np
+# try:
+#     import pyrnnoise
+# except ImportError:
+#     raise ImportError("请先安装 pyrnnoise: pip install pyrnnoise")
+# import soundfile as sf
 
-class RNNoiseDenoiseEnhancedNode:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "audio_waveform": ("AUDIO",),
-                "sample_rate": ("INT", {"default": 44100}),
-                "highpass_cutoff": ("FLOAT", {"default": 80.0}),
-                "lowpass_cutoff": ("FLOAT", {"default": 9000.0}),
-                "noise_gate_threshold": ("FLOAT", {"default": -40.0})  # dB
-            }
-        }
+# class RNNoiseDenoiseEnhancedNode:
+#     @classmethod
+#     def INPUT_TYPES(cls):
+#         return {
+#             "required": {},
+#             "optional": {
+#                 "audio": ("AUDIO",),
+#                 "audio_path": ("STRING", {"default": ""}),
+#                 "highpass_cutoff": ("FLOAT", {"default": 80.0}),
+#                 "lowpass_cutoff": ("FLOAT", {"default": 9000.0}),
+#                 "noise_gate_threshold": ("FLOAT", {"default": -40.0})
+#             }
+#         }
 
-    RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("clean_audio",)
-    FUNCTION = "denoise_enhanced"
-    CATEGORY = "Audio/Processing"
-    DESCRIPTION = "Use RNNoise + high/low pass filter + noise gate to clean up vocals."
+#     RETURN_TYPES = ("AUDIO",)
+#     RETURN_NAMES = ("clean_audio",)
+#     FUNCTION = "denoise_enhanced"
+#     CATEGORY = "Audio/Processing"
+#     DESCRIPTION = "Use RNNoise + high/low pass filter + noise gate to clean up vocals."
 
-    def denoise_enhanced(self, audio_waveform, sample_rate, highpass_cutoff, lowpass_cutoff, noise_gate_threshold):
-        # ComfyUI 的 AUDIO 通常是 dict，取 samples
-        if isinstance(audio_waveform, dict) and "samples" in audio_waveform:
-            audio_data = np.array(audio_waveform["samples"], dtype=np.float32)
-        else:
-            audio_data = np.array(audio_waveform, dtype=np.float32)
+#     def denoise_enhanced(
+#         self,
+#         audio=None,
+#         audio_path: str = "",
+#         highpass_cutoff: float = 80.0,
+#         lowpass_cutoff: float = 9000.0,
+#         noise_gate_threshold: float = -40.0
+#     ):
+#         # --------------------------
+#         # Prepare waveform
+#         # --------------------------
+#         waveform = None
+#         sample_rate = 44100
+#         if audio is not None:
+#             if isinstance(audio, dict) and "waveform" in audio and "sample_rate" in audio:
+#                 waveform = audio["waveform"]
+#                 sample_rate = audio["sample_rate"]
+#                 if hasattr(waveform, "cpu"):
+#                     waveform = waveform.cpu().numpy()
+#             elif isinstance(audio, (tuple, list)) and len(audio) == 2:
+#                 waveform, sample_rate = audio
+#                 if hasattr(waveform, "cpu"):
+#                     waveform = waveform.cpu().numpy()
+#             elif isinstance(audio, str) and os.path.exists(audio):
+#                 audio_path = audio
 
-        # 单声道
-        if audio_data.ndim > 1:
-            audio_data = np.mean(audio_data, axis=1)
+#         if waveform is None:
+#             if audio_path and os.path.exists(audio_path):
+#                 waveform, sample_rate = sf.read(audio_path, dtype="float32")
+#             else:
+#                 raise ValueError("Please provide 'audio' or a valid 'audio_path'")
 
-        # 1️⃣ RNNoise 去噪
-        denoiser = pyrnnoise.RNNoise()
-        audio_denoised = denoiser.filter(audio_data)
+#         # Ensure 2D array [channels, samples]
+#         if waveform.ndim == 1:
+#             chunk = waveform[np.newaxis, :]
+#         elif waveform.shape[0] < waveform.shape[1]:
+#             chunk = waveform
+#         else:
+#             chunk = waveform.T  # [samples, channels] -> [channels, samples]
 
-        # 2️⃣ 高频 / 低频滤波（简单FFT滤波）
-        fft = np.fft.rfft(audio_denoised)
-        freqs = np.fft.rfftfreq(len(audio_denoised), d=1/sample_rate)
-        fft[(freqs < highpass_cutoff) | (freqs > lowpass_cutoff)] = 0
-        audio_filtered = np.fft.irfft(fft)
+#         # --------------------------
+#         # RNNoise denoise
+#         # --------------------------
+#         denoiser = pyrnnoise.RNNoise(sample_rate)
+#         clean_frames = []
 
-        # 3️⃣ 噪声门
-        threshold_amp = 10 ** (noise_gate_threshold / 20.0)
-        audio_filtered[np.abs(audio_filtered) < threshold_amp] = 0.0
+#         for _, frame in denoiser.denoise_chunk(chunk, partial=True):
+#             clean_frames.append(frame)
 
-        return (audio_filtered,)
+#         clean_waveform = np.concatenate(clean_frames, axis=-1)
+#         if clean_waveform.shape[0] == 1:
+#             clean_waveform = clean_waveform[0]  # mono flatten
 
+#         # --------------------------
+#         # Highpass / Lowpass FFT filter
+#         # --------------------------
+#         fft = np.fft.rfft(clean_waveform)
+#         freqs = np.fft.rfftfreq(len(clean_waveform), d=1/sample_rate)
+#         fft[(freqs < highpass_cutoff) | (freqs > lowpass_cutoff)] = 0
+#         clean_waveform = np.fft.irfft(fft)
+
+#         # --------------------------
+#         # Noise gate
+#         # --------------------------
+#         threshold_amp = 10 ** (noise_gate_threshold / 20.0)
+#         clean_waveform[np.abs(clean_waveform) < threshold_amp] = 0.0
+
+#         # return ({"waveform": clean_waveform, "sample_rate": sample_rate},)
+    
+#     # ComfyUI expects [1, channels, samples]
+#         if clean_waveform.ndim == 1:
+#             clean_waveform = clean_waveform[np.newaxis, :]  # shape (1, samples)
+#         else:
+#             clean_waveform = clean_waveform  # shape (channels, samples)
+
+#         # ComfyUI expects [1, channels, samples]
+#         clean_tensor = torch.tensor(clean_waveform, dtype=torch.float32).unsqueeze(0)
+
+#         return ({"waveform": clean_tensor, "sample_rate": sample_rate},)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
@@ -435,7 +491,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:StoreAudioInMemory": StoreAudioInMemory,
     "Alta:LoadAudioFromMemory": LoadAudioFromMemory,
     "Alta:DeleteAudioFromMemory": DeleteAudioFromMemory,
-    "Alta:AudioDenoise": RNNoiseDenoiseEnhancedNode,
+    # "Alta:AudioDenoise": RNNoiseDenoiseEnhancedNode,
 }
 
 # 可选显示名映射
