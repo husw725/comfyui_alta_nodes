@@ -96,8 +96,8 @@ class PyannoteSpeakerDiarizationNode:
             "pyannote/speaker-diarization-community-1",
             token=hf_token,
         )
-        pipeline.clustering.method = "average"
-        pipeline.clustering.threshold = 0.6  # 默认可能是0.5，调大可以合并相似声音
+        # pipeline.clustering.method = "average"
+        # pipeline.clustering.threshold = 0.6  # 默认可能是0.5，调大可以合并相似声音
 
         if use_gpu and torch.cuda.is_available():
             pipeline.to(torch.device("cuda"))
