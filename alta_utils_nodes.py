@@ -381,6 +381,39 @@ class DeleteFile:
         except Exception as e:
             return (f"Error deleting file: {e}",)
 
+import re
+
+class RegexMatchNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": ""}),
+                "pattern": ("STRING", {"default": ""})
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "LIST")
+    RETURN_NAMES = ("first_match", "all_matches")
+    FUNCTION = "run"
+    CATEGORY = "utils"
+
+    def run(self, text, pattern):
+        try:
+            matches = re.findall(pattern, text)
+        except Exception as e:
+            return (f"Regex error: {e}", [])
+
+        if matches:
+            # flatten if group matches exists
+            if isinstance(matches[0], tuple):
+                matches = ["".join(m) for m in matches]
+
+            return (matches[0], matches)
+
+        return ("", [])
+
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
@@ -388,6 +421,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:ListElement(Util)": ListElementNode,
     "Alta:JSONKeyExtractor(Util)": JSONKeyExtractor,
     "Alta:DeleteFile(Util)": DeleteFile,
+    "Alta:RegexMatch(Util)": RegexMatchNode,
     "Alta:MoveFile(File)": MoveFileNode,
     "Alta:Int2Str(Math)": Int2Str,
     "Alta:StrToNum(Math)": StrToNum,
