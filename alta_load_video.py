@@ -782,7 +782,7 @@ class LoadFilesFromFolder:
     FUNCTION = "load_files"
 
     def load_files(self, folder, **kwargs):
-        file_paths = [os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+        file_paths = sorted([os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))])
         file_count = len(file_paths)
         return file_paths, file_count
 
