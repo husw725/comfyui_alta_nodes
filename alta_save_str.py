@@ -65,47 +65,47 @@ class GetFilenameWithExt:
         return (name,)
 
 
-class WriteStringToFile:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                # 主内容，多行输入框
-                "content": ("STRING", {
-                    "multiline": True,
-                    "default": "Hello ComfyUI!"
-                }),
-                # 文件名，可输入或连线
-                "filename": ("STRING", {
-                    "default": "output_file"
-                }),
-                # 后缀，默认 txt
-                "extension": ("STRING", {
-                    "default": "txt"
-                }),
-                # 输出目录
-                "output_dir": ("STRING", {
-                    "default": "outputs"
-                }),
-            }
-        }
+# class WriteStringToFile:
+#     @classmethod
+#     def INPUT_TYPES(cls):
+#         return {
+#             "required": {
+#                 # 主内容，多行输入框
+#                 "content": ("STRING", {
+#                     "multiline": True,
+#                     "default": "Hello ComfyUI!"
+#                 }),
+#                 # 文件名，可输入或连线
+#                 "filename": ("STRING", {
+#                     "default": "output_file"
+#                 }),
+#                 # 后缀，默认 txt
+#                 "extension": ("STRING", {
+#                     "default": "txt"
+#                 }),
+#                 # 输出目录
+#                 "output_dir": ("STRING", {
+#                     "default": "outputs"
+#                 }),
+#             }
+#         }
 
-    RETURN_TYPES = ("STRING",)
-    FUNCTION = "write_file"
-    CATEGORY = "Utils"
+#     RETURN_TYPES = ("STRING",)
+#     FUNCTION = "write_file"
+#     CATEGORY = "Utils"
 
-    def write_file(self, content, filename, extension, output_dir):
-        # 确保输出目录存在
-        os.makedirs(output_dir, exist_ok=True)
+#     def write_file(self, content, filename, extension, output_dir):
+#         # 确保输出目录存在
+#         os.makedirs(output_dir, exist_ok=True)
 
-        # 文件路径
-        file_path = os.path.join(output_dir, f"{filename}.{extension}")
+#         # 文件路径
+#         file_path = os.path.join(output_dir, f"{filename}.{extension}")
 
-        # 写入文件
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
+#         # 写入文件
+#         with open(file_path, "w", encoding="utf-8") as f:
+#             f.write(content)
 
-        return (file_path,)
+#         return (file_path,)
 
 
 class WriteStringToFile:
