@@ -433,12 +433,13 @@ class CompareFoldersNode:
     def compare_folders(self, folder_a, folder_b):
         if not os.path.isdir(folder_a):
             raise FileNotFoundError(f"Folder A not found: {folder_a}")
-        if not os.path.isdir(folder_b):
-            raise FileNotFoundError(f"Folder B not found: {folder_b}")
+
+        files_b_names = set()
+        if os.path.isdir(folder_b):
+            files_b_names = {os.path.splitext(f)[0] for f in os.listdir(folder_b) if os.path.isfile(os.path.join(folder_b, f))}
 
         files_a = [f for f in os.listdir(folder_a) if os.path.isfile(os.path.join(folder_a, f))]
-        files_b_names = {os.path.splitext(f)[0] for f in os.listdir(folder_b) if os.path.isfile(os.path.join(folder_b, f))}
-
+        
         files_not_in_b = []
         files_in_both = []
 
