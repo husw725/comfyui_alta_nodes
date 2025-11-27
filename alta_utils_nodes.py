@@ -414,6 +414,44 @@ class RegexMatchNode:
         return ("", [])
 
 
+class CompareFoldersNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "folder_a": ("STRING", {"multiline": False, "default": ""}),
+                "folder_b": ("STRING", {"multiline": False, "default": ""}),
+            }
+        }
+
+    RETURN_TYPES = ("LIST", "LIST", "INT", "INT")
+    RETURN_NAMES = ("files_not_in_b", "files_in_both", "len_files_not_in_b", "len_files_in_both")
+    FUNCTION = "compare_folders"
+    CATEGORY = "Alta/File"
+    DESCRIPTION = "Compare two folders and return files in folder_a that are not in folder_b, and files that are in both."
+
+    def compare_folders(self, folder_a, folder_b):
+        if not os.path.isdir(folder_a):
+            raise FileNotFoundError(f"Folder A not found: {folder_a}")
+        if not os.path.isdir(folder_b):
+            raise FileNotFoundError(f"Folder B not found: {folder_b}")
+
+        files_a = [f for f in os.listdir(folder_a) if os.path.isfile(os.path.join(folder_a, f))]
+        files_b_names = {os.path.splitext(f)[0] for f in os.listdir(folder_b) if os.path.isfile(os.path.join(folder_b, f))}
+
+        files_not_in_b = []
+        files_in_both = []
+
+        for file_a in files_a:
+            file_a_name = os.path.splitext(file_a)[0]
+            if file_a_name in files_b_names:
+                files_in_both.append(os.path.join(folder_a, file_a))
+            else:
+                files_not_in_b.append(os.path.join(folder_a, file_a))
+        
+        return (files_not_in_b, files_in_both, len(files_not_in_b), len(files_in_both))
+
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
@@ -423,6 +461,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:DeleteFile(Util)": DeleteFile,
     "Alta:RegexMatch(Util)": RegexMatchNode,
     "Alta:MoveFile(File)": MoveFileNode,
+    "Alta:CompareFolders(File)": CompareFoldersNode,
     "Alta:Int2Str(Math)": Int2Str,
     "Alta:StrToNum(Math)": StrToNum,
     "Alta:Add(Math)": AddNode,
