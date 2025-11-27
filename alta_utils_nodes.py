@@ -1,5 +1,7 @@
 from typing import Any, Tuple
 import os
+import time
+
 
 
 
@@ -429,6 +431,9 @@ class CompareFoldersNode:
     FUNCTION = "compare_folders"
     CATEGORY = "Alta/File"
     DESCRIPTION = "Compare two folders and return files in folder_a that are not in folder_b, and files that are in both."
+
+    def IS_CHANGED(self, *args, **kwargs):
+        return float("inf")
 
     def compare_folders(self, folder_a, folder_b):
         if not os.path.isdir(folder_a):
