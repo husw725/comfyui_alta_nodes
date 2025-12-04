@@ -461,17 +461,18 @@ class CompareFoldersNode:
 class IfOnlyNode:
     """
     If Only Node: Outputs value to true_output if condition is true, else to false_output.
+    The output type will dynamically match the input type.
     """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "condition": ("BOOLEAN", {"default": True}),
-                "value": (["IMAGE", "AUDIO", "VIDEO", "STRING", "TUPLE", "LIST", "INT", "FLOAT"], {"default": None}),
+                "value": ('*',),  # Wildcard input, accepts any type
             }
         }
 
-    RETURN_TYPES = ("ANY", "ANY")
+    RETURN_TYPES = ('*', '*', ) # Outputs will have the same type as the input
     RETURN_NAMES = ("true_output", "false_output")
     FUNCTION = "execute"
     CATEGORY = "Alta/Logic"
