@@ -456,6 +456,16 @@ class CompareFoldersNode:
                 files_not_in_b.append(os.path.join(folder_a, file_a))
         
         return (files_not_in_b, files_in_both, len(files_not_in_b), len(files_in_both))
+    
+
+class AlwaysEqualProxy(str):
+    def __eq__(self, _):
+        return True
+
+    def __ne__(self, _):
+        return False
+
+any_type = AlwaysEqualProxy("*")
 
 
 class IfOnlyNode:
@@ -468,21 +478,21 @@ class IfOnlyNode:
         return {
             "required": {
                 "condition": ("BOOLEAN", {"default": True}),
-                "value": ('*',),  # Wildcard input, accepts any type
+                "value": (any_type,),  # Wildcard input, accepts any type
             }
         }
 
-    RETURN_TYPES = ('*', '*', ) # Outputs will have the same type as the input
+    RETURN_TYPES = (any_type, any_type, ) # Outputs will have the same type as the input
     RETURN_NAMES = ("true_output", "false_output")
     FUNCTION = "execute"
     CATEGORY = "Alta/Logic"
     DESCRIPTION = "Outputs value to true_output if condition is true, else to false_output."
 
-    def execute(self, condition: bool, value: Any) -> Tuple[Any, Any]:
+    def execute(self, condition: bool, value):
         if condition:
-            return (value, None)
+            return ([value], None)
         else:
-            return (None, value)
+            return (None, [value])
 
 
 NODE_CLASS_MAPPINGS = {
