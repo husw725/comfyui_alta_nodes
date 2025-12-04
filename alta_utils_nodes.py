@@ -467,7 +467,7 @@ class IfOnlyNode:
         return {
             "required": {
                 "condition": ("BOOLEAN", {"default": True}),
-                "value": ("ANY",),
+                "value": (["IMAGE", "AUDIO", "VIDEO", "STRING", "TUPLE", "LIST", "INT", "FLOAT"], {"default": None}),
             }
         }
 
