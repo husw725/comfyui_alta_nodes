@@ -458,6 +458,32 @@ class CompareFoldersNode:
         return (files_not_in_b, files_in_both, len(files_not_in_b), len(files_in_both))
 
 
+class IfOnlyNode:
+    """
+    If Only Node: Outputs value to true_output if condition is true, else to false_output.
+    """
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "condition": ("BOOLEAN", {"default": True}),
+                "value": ("ANY",),
+            }
+        }
+
+    RETURN_TYPES = ("ANY", "ANY")
+    RETURN_NAMES = ("true_output", "false_output")
+    FUNCTION = "execute"
+    CATEGORY = "Alta/Logic"
+    DESCRIPTION = "Outputs value to true_output if condition is true, else to false_output."
+
+    def execute(self, condition: bool, value: Any) -> Tuple[Any, Any]:
+        if condition:
+            return (value, None)
+        else:
+            return (None, value)
+
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
@@ -474,6 +500,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:AddInt(Math)": AddIntNode,
     "Alta:Sub(Math)": SubNode,
     "Alta:SubInt(Math)": SubIntNode,
+    "Alta:IfOnly(Logic)": IfOnlyNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
