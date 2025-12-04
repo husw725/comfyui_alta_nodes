@@ -490,9 +490,9 @@ class IfOnlyNode:
 
     def execute(self, condition: bool, value):
         if condition:
-            return ([value], None)
+            return (value, None)
         else:
-            return (None, [value])
+            return (None, value)
 
 
 NODE_CLASS_MAPPINGS = {
