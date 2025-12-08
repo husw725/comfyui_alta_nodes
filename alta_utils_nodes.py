@@ -495,6 +495,25 @@ class IfOnlyNode:
             return (None, value)
 
 
+class StringPlusNode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "string": ("STRING", {"multiline": True, "default": ""}),
+                "any": (any_type,),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("string",)
+    FUNCTION = "execute"
+    CATEGORY = "Alta/Utils"
+    DESCRIPTION = "Return a string, but with an additional input to control execution flow."
+
+    def execute(self, string: str, any):
+        return (string,)
+
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
     "Alta:MultiRoute": MultiRouteNode,
@@ -512,6 +531,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:Sub(Math)": SubNode,
     "Alta:SubInt(Math)": SubIntNode,
     "Alta:IfOnly(Logic)": IfOnlyNode,
+    "Alta:StringPlus(Util)": StringPlusNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
