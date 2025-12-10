@@ -53,35 +53,40 @@ class DynamicTupleNode:
     
 class MultiRouteNode:
     """
-    动态多路 ANY 路由：
-    - 输入端口根据连线自动增加
-    - 输出端口数量与输入一致
-    - 输入/输出类型使用外部定义的 any_type
+    固定 5 输入（1 required + 4 optional），
+    根据实际连线数量动态生成输出数量。
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "inputs": (any_type, {"dynamic": True}),  # ★ 使用你的 any_type
+                "in1": (any_type,),
+            },
+            "optional": {
+                "in2": (any_type,),
+                "in3": (any_type,),
+                "in4": (any_type,),
+                "in5": (any_type,),
             }
         }
 
-    # 输出同样必须是 ANY，使用 any_type
     RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("outputs",)
-    OUTPUT_IS_LIST = True  # ★ 告诉 ComfyUI 输出是动态 list
+    RETURN_NAMES = ("outs",)
+    OUTPUT_IS_LIST = True
 
     FUNCTION = "route"
-    CATEGORY = "Utils/Routing"
-    DESCRIPTION = "动态 ANY 路由（基于 any_type），根据连线自动扩展输入/输出数量"
+    CATEGORY = "alta/utils"
+    DESCRIPTION = "固定 5 输入（1必填4选填），根据连线自动生成输出数量"
 
-    def route(self, inputs):
-        """
-        inputs: list，包含所有动态输入
-        返回值必须是 tuple(list)，OUTPUT_IS_LIST 会展开
-        """
-        return (inputs,)
+    def route(self, in1, in2=None, in3=None, in4=None, in5=None):
+        inputs = [in1, in2, in3, in4, in5]
+
+        # 只保留实际连线的输入（None 表示未连线）
+        valid = [x for x in inputs if x is not None]
+
+        # 输出多少个，就显示多少个 out
+        return (valid,)
 
 
 class ListLengthNode:
