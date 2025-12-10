@@ -86,7 +86,20 @@ class MultiRouteNode:
         valid = [x for x in inputs if x is not None]
 
         # 输出多少个，就显示多少个 out
-        return (valid,)
+        # do not ouput list
+        if len(valid) == 1:
+            return (valid[0],)
+        elif len(valid) == 2:
+            return (valid[0], valid[1])
+        elif len(valid) == 3:
+            return (valid[0], valid[1], valid[2])
+        elif len(valid) == 4:
+            return (valid[0], valid[1], valid[2], valid[3])
+        elif len(valid) == 5:
+            return (valid[0], valid[1], valid[2], valid[3], valid[4])
+        else:
+            return (None,)
+        return (valid,)     
 
 
 class ListLengthNode:
