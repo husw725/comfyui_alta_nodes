@@ -71,8 +71,8 @@ class MultiRouteNode:
             }
         }
 
-    RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("outs",)
+    RETURN_TYPES = (any_type,any_type,any_type,any_type,any_type)
+    RETURN_NAMES = ("out1","out2","out3","out4","out5")
     OUTPUT_IS_LIST = True
 
     FUNCTION = "route"
@@ -80,26 +80,8 @@ class MultiRouteNode:
     DESCRIPTION = "固定 5 输入（1必填4选填），根据连线自动生成输出数量"
 
     def route(self, in1, in2=None, in3=None, in4=None, in5=None):
-        inputs = [in1, in2, in3, in4, in5]
-
-        # 只保留实际连线的输入（None 表示未连线）
-        valid = [x for x in inputs if x is not None]
-
-        # 输出多少个，就显示多少个 out
-        # do not ouput list
-        if len(valid) == 1:
-            return (valid[0],)
-        elif len(valid) == 2:
-            return (valid[0], valid[1])
-        elif len(valid) == 3:
-            return (valid[0], valid[1], valid[2])
-        elif len(valid) == 4:
-            return (valid[0], valid[1], valid[2], valid[3])
-        elif len(valid) == 5:
-            return (valid[0], valid[1], valid[2], valid[3], valid[4])
-        else:
-            return (None,)
-        return (valid,)     
+        return (in1, in2, in3, in4, in5)
+    
 
 
 class ListLengthNode:
