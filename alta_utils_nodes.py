@@ -53,34 +53,35 @@ class DynamicTupleNode:
     
 class MultiRouteNode:
     """
-    通用多路由节点（优化版）
-    - 提供 5 个 ANY 类型输入
-    - 输出同样是 5 个 ANY（逐项透传）
-    - 适用于任意数据的多路复用与路由
+    动态多路 ANY 路由：
+    - 输入端口根据连线自动增加
+    - 输出端口数量与输入一致
+    - 输入/输出类型使用外部定义的 any_type
     """
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "in1": (any_type,),
-            },
-            "optional": {
-                "in2": (any_type,),
-                "in3": (any_type,),
-                "in4": (any_type,),
-                "in5": (any_type,),
+                "inputs": (any_type, {"dynamic": True}),  # ★ 使用你的 any_type
             }
         }
 
-    RETURN_TYPES = (any_type, any_type, any_type, any_type, any_type)
-    RETURN_NAMES = ("out1", "out2", "out3", "out4", "out5")
+    # 输出同样必须是 ANY，使用 any_type
+    RETURN_TYPES = (any_type,)
+    RETURN_NAMES = ("outputs",)
+    OUTPUT_IS_LIST = True  # ★ 告诉 ComfyUI 输出是动态 list
 
     FUNCTION = "route"
     CATEGORY = "Utils/Routing"
-    DESCRIPTION = "5×ANY 输入 → 5×ANY 输出，用于任意数据透传与分流"
+    DESCRIPTION = "动态 ANY 路由（基于 any_type），根据连线自动扩展输入/输出数量"
 
-    def route(self, in1, in2, in3, in4, in5):
-        return (in1, in2, in3, in4, in5)
+    def route(self, inputs):
+        """
+        inputs: list，包含所有动态输入
+        返回值必须是 tuple(list)，OUTPUT_IS_LIST 会展开
+        """
+        return (inputs,)
 
 
 class ListLengthNode:
