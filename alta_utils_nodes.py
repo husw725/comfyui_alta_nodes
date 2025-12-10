@@ -4,6 +4,14 @@ import time
 
 
 
+class AlwaysEqualProxy(str):
+    def __eq__(self, _):
+        return True
+
+    def __ne__(self, _):
+        return False
+
+any_type = AlwaysEqualProxy("*")
 
 class DynamicTupleNode:
     """
@@ -43,48 +51,36 @@ class DynamicTupleNode:
                 values.append(kwargs[key])
         return (tuple(values),)
     
-
 class MultiRouteNode:
     """
-    通用多路由节点：
-    - 必填 1 个 ANY 输入
-    - 可选输入 AUDIO / VIDEO / IMAGE / LATENT / TENSOR / ANY
+    通用多路由节点（优化版）
+    - 提供 5 个 ANY 类型输入
+    - 输出同样是 5 个 ANY（逐项透传）
+    - 适用于任意数据的多路复用与路由
     """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "any_in": ("ANY",),  # 必填 ANY
+                "in1": (any_type,),
             },
             "optional": {
-                "audio_in": ("AUDIO",),
-                "video_in": ("VIDEO",),
-                "image_in": ("IMAGE",),
-                "latent_in": ("LATENT",),
-                "tensor_in": ("TENSOR",),
-                "any2": ("ANY",),
-                "any3": ("ANY",),
+                "in2": (any_type,),
+                "in3": (any_type,),
+                "in4": (any_type,),
+                "in5": (any_type,),
             }
         }
 
-    RETURN_TYPES = ("ANY", "AUDIO", "VIDEO", "IMAGE", "LATENT", "TENSOR", "ANY", "ANY")
-    RETURN_NAMES = ("any_out", "audio_out", "video_out", "image_out", "latent_out", "tensor_out", "any_out2", "any_out3")
+    RETURN_TYPES = (any_type, any_type, any_type, any_type, any_type)
+    RETURN_NAMES = ("out1", "out2", "out3", "out4", "out5")
+
     FUNCTION = "route"
     CATEGORY = "Utils/Routing"
-    DESCRIPTION = "通用多路由节点，支持 AUDIO/VIDEO/IMAGE/LATENT/TENSOR/ANY 类型"
+    DESCRIPTION = "5×ANY 输入 → 5×ANY 输出，用于任意数据透传与分流"
 
-    def route(self,
-              any_in,
-              audio_in=None,
-              video_in=None,
-              image_in=None,
-              latent_in=None,
-              tensor_in=None,
-              any2=None,
-              any3=None) -> Tuple[Any, Any, Any, Any, Any, Any, Any, Any]:
-        # 原样返回输入
-        return (any_in, audio_in, video_in, image_in, latent_in, tensor_in, any2, any3)
-
+    def route(self, in1, in2, in3, in4, in5):
+        return (in1, in2, in3, in4, in5)
 
 
 class ListLengthNode:
@@ -458,14 +454,6 @@ class CompareFoldersNode:
         return (files_not_in_b, files_in_both, len(files_not_in_b), len(files_in_both))
     
 
-class AlwaysEqualProxy(str):
-    def __eq__(self, _):
-        return True
-
-    def __ne__(self, _):
-        return False
-
-any_type = AlwaysEqualProxy("*")
 
 
 class IfOnlyNode:
