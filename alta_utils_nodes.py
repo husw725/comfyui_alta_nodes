@@ -73,7 +73,6 @@ class MultiRouteNode:
 
     RETURN_TYPES = (any_type,any_type,any_type,any_type,any_type)
     RETURN_NAMES = ("out1","out2","out3","out4","out5")
-    OUTPUT_IS_LIST = True
 
     FUNCTION = "route"
     CATEGORY = "alta/utils"
