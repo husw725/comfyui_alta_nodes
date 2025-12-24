@@ -501,6 +501,71 @@ class StringPlusNode:
 
     def execute(self, string: str, any):
         return (string,)
+    
+class ComboWrapperNode:
+    """
+    Combo Wrapper Node
+    - 将可连线的数值 / 任意输入映射为 COMBO / STRING
+    - 常用于包裹 UI-only 的枚举参数（如 Sora duration）
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "value": (any_type,),  # 来自 Logic / Math / Loop
+                "mapping": ("STRING", {
+                    "multiline": True,
+                    "default": "4=4s\n8=8s\n16=16s"
+                }),
+                "mode": (["nearest", "floor", "ceil"], {
+                    "default": "nearest"
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("combo",)
+    FUNCTION = "execute"
+    CATEGORY = "Alta/Utils"
+    DESCRIPTION = "Map dynamic input value to a COMBO/STRING using mapping rules."
+
+    def execute(self, value, mapping: str, mode: str):
+        # 1. value 归一化成 float（兼容 any_type）
+        try:
+            v = float(value)
+        except Exception:
+            # fallback：取第一个映射
+            first = mapping.splitlines()[0]
+            return (first.split("=", 1)[1].strip(),)
+
+        # 2. 解析 mapping
+        pairs = []
+        for line in mapping.splitlines():
+            if "=" not in line:
+                continue
+            k, v_str = line.split("=", 1)
+            try:
+                pairs.append((float(k.strip()), v_str.strip()))
+            except Exception:
+                pass
+
+        if not pairs:
+            raise ValueError("ComboWrapperNode: invalid mapping")
+
+        pairs.sort(key=lambda x: x[0])
+
+        # 3. 选择策略
+        if mode == "floor":
+            candidates = [p for p in pairs if p[0] <= v]
+            selected = candidates[-1] if candidates else pairs[0]
+        elif mode == "ceil":
+            candidates = [p for p in pairs if p[0] >= v]
+            selected = candidates[0] if candidates else pairs[-1]
+        else:  # nearest
+            selected = min(pairs, key=lambda p: abs(p[0] - v))
+
+        return (selected[1],)
 
 NODE_CLASS_MAPPINGS = {
     "Alta:MergeNodes": DynamicTupleNode,
@@ -520,6 +585,7 @@ NODE_CLASS_MAPPINGS = {
     "Alta:SubInt(Math)": SubIntNode,
     "Alta:IfOnly(Logic)": IfOnlyNode,
     "Alta:StringPlus(Util)": StringPlusNode,
+    "Alta:ComboWrapper(Logic)": ComboWrapperNode,
 }
 
 # NODE_DISPLAY_NAME_MAPPINGS = {
