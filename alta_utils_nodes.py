@@ -524,7 +524,7 @@ class ComboWrapperNode:
             }
         }
 
-    RETURN_TYPES = ("STRING",)
+    RETURN_TYPES = ("COMBO",)
     RETURN_NAMES = ("combo",)
     FUNCTION = "execute"
     CATEGORY = "Alta/Utils"
