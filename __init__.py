@@ -16,12 +16,12 @@ try:
 except ImportError as e:
     logger.error("Error importing alta_load_images",e)
 
-try:
-    from .nodes_jimeng import NODE_CLASS_MAPPINGS as JIMENG_MAPPING
-    NODE_CLASS_MAPPINGS.update(JIMENG_MAPPING)
-    logger.info("nodes_jimeng loaded")
-except ImportError as e:
-    logger.error("Error importing nodes_jimeng",e)
+# try:
+#     from .nodes_jimeng import NODE_CLASS_MAPPINGS as JIMENG_MAPPING
+#     NODE_CLASS_MAPPINGS.update(JIMENG_MAPPING)
+#     logger.info("nodes_jimeng loaded")
+# except ImportError as e:
+#     logger.error("Error importing nodes_jimeng",e)
 
 try:
     from .alta_load_video import NODE_CLASS_MAPPINGS as VIDEO_MAPPING
@@ -82,23 +82,23 @@ except Exception as e:
     logger.error("Error importing cartoon_face_mask", e)
 
 
-try:
-    from .alta_lipsync_node import NODE_CLASS_MAPPINGS as lipsync_mapping
-    NODE_CLASS_MAPPINGS.update(lipsync_mapping)
-    logger.info("alta_lipsync_node loaded")
-except ImportError as e:
-    logger.error("Error importing alta_lipsync_node",e)
-except Exception as e:
-    logger.error("Error importing alta_lipsync_node", e)
+# try:
+#     from .alta_lipsync_node import NODE_CLASS_MAPPINGS as lipsync_mapping
+#     NODE_CLASS_MAPPINGS.update(lipsync_mapping)
+#     logger.info("alta_lipsync_node loaded")
+# except ImportError as e:
+#     logger.error("Error importing alta_lipsync_node",e)
+# except Exception as e:
+#     logger.error("Error importing alta_lipsync_node", e)
 
 
-try:
-    from .alta_audio_nodes import NODE_CLASS_MAPPINGS as audio_mapping
-    NODE_CLASS_MAPPINGS.update(audio_mapping)
-    logger.info("alta_audio_nodes loaded")
-except ImportError as e:
-    logger.error("Error importing alta_audio_nodes",e)
-except Exception as e:
-    logger.error("Error importing alta_audio_nodes", e)
+# try:
+#     from .alta_audio_nodes import NODE_CLASS_MAPPINGS as audio_mapping
+#     NODE_CLASS_MAPPINGS.update(audio_mapping)
+#     logger.info("alta_audio_nodes loaded")
+# except ImportError as e:
+#     logger.error("Error importing alta_audio_nodes",e)
+# except Exception as e:
+#     logger.error("Error importing alta_audio_nodes", e)
 
 logger.warning("================= ALTA NODES LOADED ================")
