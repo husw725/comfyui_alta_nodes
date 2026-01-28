@@ -760,7 +760,11 @@ class LoadVideosFromFolder:
 
     @classmethod
     def VALIDATE_INPUTS(cls, folder):
-        return os.path.isdir(folder)
+        if folder is None:
+            return True
+        if not os.path.isdir(folder):
+            return f"Folder '{folder}' not found or is not a directory."
+        return True
 
 
 class LoadFilesFromFolder:
@@ -792,7 +796,11 @@ class LoadFilesFromFolder:
 
     @classmethod
     def VALIDATE_INPUTS(cls, folder):
-        return os.path.isdir(folder)
+        if folder is None:
+            return True
+        if not os.path.isdir(folder):
+            return f"Folder '{folder}' not found or is not a directory."
+        return True
 
 class LoadVideo:
     # 定义输入输出
